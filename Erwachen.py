@@ -3,33 +3,39 @@ import ast
 import csv
 import json
 
-class Umgebung:  
+class Umgebung:
     async def fehler(self, msg):
         await self.schreibeNachricht(msg, "Unbekanntes Kommando.")
         pass
 
     async def befehl(self, msg):
-        eingaben = msg.content.split(' ')
-        if eingaben[0] in dir(Umgebung):
-            return await getattr(self, eingaben[0], lambda fehler: "unbekannt")(msg)
+        # nur in Spielchannels reagieren
+        if msg.channel.name == 'start-portal' or msg.channel.name.startswith('konsole-'):
+            eingaben = msg.content.split(' ')
+            if msg.channel.name == 'start-portal' and eingaben[0] != 'Teilnehmen':
+                return
+            if eingaben[0] in dir(Umgebung):
+                return await getattr(self, eingaben[0], lambda fehler: "unbekannt")(msg)
+            else:
+                await self.fehler(msg)
         else:
-            await self.fehler(msg)
+            print('Channel '+msg.channel.name+' ignoriert')
 
     def __init__(self):
         self.LadeStartWerte()
         print('Startwerte gelesen')
-        print(self.Werte) 
+        print(self.Werte)
 
     # Laed Werte aus einer gespeicherten Session
     def LadeWerte(self, datei):
         self.Werte = []
         with open(datei) as json_file:
             self.Werte = json.load(datei)
-        
-    def SchreibeWerte(self, datei):
-        json.dump(self.Werte, datei)        
 
-    # laed die CSV Datei mit den Startwerten 
+    def SchreibeWerte(self, datei):
+        json.dump(self.Werte, datei)
+
+    # laed die CSV Datei mit den Startwerten
     def LadeStartWerte(self, msg=None):
         self.Werte = []
         with open('Initialwerte.csv', 'r') as datei:
@@ -45,7 +51,7 @@ class Umgebung:
         else:
             return eingaben[nr].strip()
 
-    # Wert mit Überprüfung setzen           
+    # Wert mit Überprüfung setzen
     async def setzeWert(self, msg, wertname, wert, pruefwertname=''):
         if not wert.isnumeric():
             await self.schreibeNachricht(msg,f'Der Wert "{wert}" ist ungültig. Kommando nicht ausführbar.')
@@ -75,7 +81,7 @@ class Umgebung:
 
     async def Anzeige(self, msg, bezeichnung, text=None):
         if text is None:
-            text = bezeichnung 
+            text = bezeichnung
         text = f'{text}energie ist eingestellt auf ' + str(self.Werte[f'Energieverbrauch_{bezeichnung}'] ) + ' von ' + str(self.Werte[f'Energieverbrauch_{bezeichnung}_max'])
         await self.schreibeNachricht(msg,text)
 
@@ -92,32 +98,32 @@ class Umgebung:
     async def RecyclingEnergie(self, msg):
         await self.aendereWert(msg, 'Recycling')
 
-    async def AquaAnzeige(self, parameter):
+    async def AquaAnzeige(self, msg):
         await self.schreibeNachricht(msg,f'Energieverbrauch Aquaristikmodul: ' +
                                        str(self.Werte['Energieverbrauch_Aqua']) +
                                        ' von '+
-                                       str(self.Werte['Energieverbrauch_Aqua_max'])+
-                                       '\n'+
-                                       'Anteil Luft-/Nahrungserzeugung: '+
-                                       str(float(self.Werte['Energieanteil_Aqua_Lufterzeugung'])*100) +
+                                       str(self.Werte['Energieverbrauch_Aqua_max']) +
+                                       '\n' +
+                                       'Anteil Luft-/Nahrungserzeugung: ' +
+                                       str(float(self.Werte['Energieanteil_Aqua_Lufterzeugung']) * 100) +
                                        '%'  )
-  
+
     async def AquaEnergie(self, msg):
         await self.aendereWert(msg, 'Aqua')
 
     async def BioEnergie(self, msg):
         await self.aendereWert(msg, 'Bio')
 
-    async def BioAnzeige(self, parameter):
-        await self.schreibeNachricht(msg,f'Energieverbrauch Bioristikmodul: ' +
+    async def BioAnzeige(self, msg):
+        await self.schreibeNachricht(msg,f'Energieverbrauch Biotopmodul: ' +
                                        str(self.Werte['Energieverbrauch_Bio']) +
                                        ' von '+
-                                       str(self.Werte['Energieverbrauch_Bio_max'])+
-                                       '\n'+
-                                       'Anteil Luft-/Nahrungserzeugung: '+
-                                       str(float(self.Werte['Energieanteil_Bio_Lufterzeugung'])*100) +
+                                       str(self.Werte['Energieverbrauch_Bio_max']) +
+                                       '\n' +
+                                       'Anteil Luft-/Nahrungserzeugung: ' +
+                                       str(float(self.Werte['Energieanteil_Bio_Lufterzeugung']) * 100) +
                                        '%'  )
-  
+
     async def AussenhuelleEnergie(self, msg):
         await self.aendereWert(msg, 'Aussenhuelle')
 
@@ -203,77 +209,94 @@ class Umgebung:
         await self.Anzeige(msg,'Solar')
 
     async def ZeigeStatus(self, msg):
-        await self.schreibeNachricht(msg,f'Klick ' + str(self.Werte['Klick']) + 
-                ': Energie='+str(self.Werte['Energie'])+ 
-                ' Brennstoff='+str(self.Werte['Brennstoff'])+
-                ' Nahrung='+str(self.Werte['Nahrung'])+
-                ' Luft='+str(self.Werte['Luft']))
+        await self.schreibeNachricht(msg,f' *** System-Status *** || *Klick ' + str(self.Werte['Klick']) + '* \n ' +
+                'Energie      = '+ str(self.Werte['Energie']) + ' von maximal: ' + str(self.Werte['Energie_max']) + ' \n ' +
+                'Brennstoff = ' + str(self.Werte['Brennstoff']) + ' von maximal: ' + str(self.Werte['Brennstoff_max']) + ' \n' +
+                'Nahrung     = ' + str(self.Werte['Nahrung']) + ' von maximal: ' + str(self.Werte['Nahrung_max']) + ' \n ' +
+                'Luft             = ' + str(self.Werte['Luft']) + ' von maximal: ' + str(self.Werte['Luft_max']) )
 
     # Spiellogiken
-    async def GeneratorStart(self, msg):
-        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Generator']*(1-self.Werte['Techstufe_Ingenieur'])
-        self.Werte['Energie'] += self.Werte['Energieverbrauch_Generator']*self.Werte['Generatorfaktor']*self.Werte['Techstufe_Ingenieur']-self.Werte['Energieverbrauch_Generator']
-
-    async def RecyclingStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Recycling']*(1-self.Werte['Techstufe_Recycling'])
-        self.Werte['Luft'] -= self.Werte['Energieverbrauch_Recycling']*(1-self.Werte['Techstufe_Recycling'])
-        self.Werte['Brennstoff'] += self.Werte['Energieverbrauch_Recycling']*self.Werte['Brennstoff_Anpassungsfaktor']*self.Werte['Techstufe_Recycling']
-
     async def AquaStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Aqua']*(1-self.Werte['Techstufe_Facility'])
-        self.Werte['Luft'] += self.Werte['Energieverbrauch_Aqua']*self.Werte['Energieanteil_Aqua_Lufterzeugung']*self.Werte['Techstufe_Aqua']*self.Werte['Lufterzeugung_Anpassungsfaktor']
-        self.Werte['Nahrung'] += self.Werte['Energieverbrauch_Aqua']*(1-self.Werte['Energieanteil_Aqua_Lufterzeugung'])*self.Werte['Techstufe_Aqua']*self.Werte['Nahrungs_Anpassungsfaktor']
+        self.Werte['Energie']    -= self.Werte['Energieverbrauch_Aqua'] * (2-self.Werte['Techstufe_Facility'])
+        self.Werte['Luft']       += self.Werte['Energieverbrauch_Aqua'] * self.Werte['Energieanteil_Aqua_Lufterzeugung'] * self.Werte['Techstufe_Aqua'] * self.Werte['Lufterzeugung_Anpassungsfaktor']
+        self.Werte['Nahrung']    += self.Werte['Energieverbrauch_Aqua'] * (2-self.Werte['Energieanteil_Aqua_Lufterzeugung'])*self.Werte['Techstufe_Aqua']*self.Werte['Nahrungs_Anpassungsfaktor']
+        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Aqua'] * (2-self.Werte['Techstufe_Recycling'])
 
-    async def BioStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Bio']*(1-self.Werte['Techstufe_Facility'])
-        self.Werte['Luft'] += self.Werte['Energieverbrauch_Bio']*self.Werte['Energieanteil_Bio_Lufterzeugung']*self.Werte['Techstufe_Bio']*self.Werte['Lufterzeugung_Anpassungsfaktor']
-        self.Werte['Nahrung'] += self.Werte['Energieverbrauch_Bio']*(1-self.Werte['Energieanteil_Bio_Lufterzeugung'])*self.Werte['Techstufe_Bio']*self.Werte['Nahrungs_Anpassungsfaktor']
 
     async def AussenhuelleStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Aussenhuelle']*(1-self.Werte['Techstufe_Technik'])
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Aussenhuelle']*(2-self.Werte['Techstufe_Technik'])
+
+
+    async def BioStart(self, msg):
+        self.Werte['Energie']       -= self.Werte['Energieverbrauch_Bio'] * (2-self.Werte['Techstufe_Facility'])
+        self.Werte['Luft']          += self.Werte['Energieverbrauch_Bio'] * self.Werte['Energieanteil_Bio_Lufterzeugung'] * self.Werte['Techstufe_Bio'] * self.Werte['Lufterzeugung_Anpassungsfaktor']
+        self.Werte['Nahrung']       += self.Werte['Energieverbrauch_Bio'] * (2-self.Werte['Energieanteil_Bio_Lufterzeugung'])*self.Werte['Techstufe_Bio']*self.Werte['Nahrungs_Anpassungsfaktor']
+        self.Werte['Brennstoff']    -= self.Werte['Energieverbrauch_Bio'] * (2-self.Werte['Techstufe_Recycling'])
+
+
 
     async def ForschungsmodulStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Forschungsmodul']*(1-self.Werte['Techstufe_Ingenieur'])
-              
-    async def KrankenstationStart(self, msg):
-        self.Werte['Energie'] += self.Werte['Energieverbrauch_Krankenstation']*self.Werte['Krankenstationfaktor']*self.Werte['Techstufe_Facility'] - self.Werte['Energieverbrauch_Krankenstation']
-      
-    async def LagerStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Lager']*self.Werte['Techstufe_Facility']
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Forschungsmodul']*(2-self.Werte['Techstufe_Ingenieur'])
 
-    async def MultiStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Multi']*(1-self.Werte['Techstufe_Facility'])                              
-
-    async def KommandoStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Kommando']*(1-self.Werte['Techstufe_Facility'])        
 
     async def GeheimlaborStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Geheimlabor']*(1-self.Werte['Techstufe_Facility'])        
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Geheimlabor']*(2-self.Werte['Techstufe_Kollaborateur'])
+
+    async def GeheimlagerStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Geheimlager']*(2-self.Werte['Techstufe_Kollaborateur'])
+
+    async def GeneratorStart(self, msg):
+        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Generator']*(2-self.Werte['Techstufe_Ingenieur'])
+        self.Werte['Energie']    += self.Werte['Energieverbrauch_Generator']*self.Werte['Generatorfaktor']*self.Werte['Techstufe_Ingenieur']-self.Werte['Energieverbrauch_Generator']
 
     async def MesseStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Messe']*(1-self.Werte['Techstufe_Facility'])        
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Messe']*(2-self.Werte['Techstufe_Facility'])
+
+    async def KommandoStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Kommando']*(2-self.Werte['Techstufe_Facility'])
+
+    async def KrankenstationStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Krankenstation']*self.Werte['Krankenstationfaktor'] - self.Werte['Energieverbrauch_Krankenstation']*self.Werte['Techstufe_Facility']
+
+    async def LagerStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Lager']*(2-self.Werte['Techstufe_Facility'])
+
+    async def MultiStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Multi']*(2-self.Werte['Techstufe_Facility'])
 
     async def ServerraumStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Serverraum']*(1-self.Werte['Techstufe_Informatik'])        
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Serverraum']*(2-self.Werte['Techstufe_Informatik'])
 
     async def SolarStart(self, msg):
-        self.Werte['Energie'] += self.Werte['Energieverbrauch_Solar']*self.Werte['Techstufe_Technik']*self.Werte['Solarfaktor'] - self.Werte['Energieverbrauch_Solar']      
+        self.Werte['Energie'] += self.Werte['Energieverbrauch_Solar']*self.Werte['Techstufe_Technik']*self.Werte['Solarfaktor'] - self.Werte['Energieverbrauch_Solar']
+
+    async def RecyclingStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Recycling']*(2-self.Werte['Techstufe_Recycling'])
+        self.Werte['Luft'] -= self.Werte['Energieverbrauch_Recycling']*(2-self.Werte['Techstufe_Recycling'])
+        self.Werte['Brennstoff'] += self.Werte['Energieverbrauch_Recycling']*self.Werte['Brennstoff_Anpassungsfaktor']*self.Werte['Techstufe_Recycling']
+
+
+    # Lager/ Systemwerte
 
     async def EnergiespeicherStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Energiespeicher']*(1-self.Werte['Techstufe_Facility'])        
+        self.Werte['Energie']    -= self.Werte['Energieverbrauch_Energiespeicher']*(2-self.Werte['Techstufe_Facility']) + self.Werte['Energieverbrauch_Verluste']
         self.Werte['Energie_max'] = (self.Werte['Energiespeicher_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Energiespeicher_max']*0.2*self.Werte['Energieverbrauch_Energiespeicher'])
 
     async def KuehlmodulStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Kuehlmodul']*(1-self.Werte['Techstufe_Facility'])        
-        self.Werte['Nahrung_max'] = (self.Werte['Nahrung_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Nahrung_max']*0.2*self.Werte['Energieverbrauch_Kuehlmodul'])
+        self.Werte['Energie']    -= self.Werte['Energieverbrauch_Kuehlmodul']*(2-self.Werte['Techstufe_Facility'])
+        self.Werte['Nahrung_max'] = (self.Werte['Nahrungsspeicher_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Nahrungsspeicher_max']*0.2*self.Werte['Energieverbrauch_Kuehlmodul'])
+        self.Werte['Nahrung']    -= self.Werte['Nahrungsverbrauch_proZyklus']
 
     async def LufttankStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Lufttank']*(1-self.Werte['Techstufe_Technik'])        
-        self.Werte['Luft_max'] = (self.Werte['Lufttank_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Luft_max']*0.2*self.Werte['Energieverbrauch_Lufttank'])
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Lufttank']*(2-self.Werte['Techstufe_Technik'])
+        self.Werte['Luft_max'] = (self.Werte['Lufttank_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Lufttank_max']*0.2*self.Werte['Energieverbrauch_Lufttank'])
+        self.Werte['Luft']    -= self.Werte['Luftverbrauch_Geheimlabor'] + self.Werte['Luftverbrauch_Module'] 
 
     async def BrennstofflagerStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Brennstofflager']*(1-self.Werte['Techstufe_Technik'])        
-        self.Werte['Nahrung_max'] = (self.Werte['Brennstoff_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Brennstoff_max']*0.2*self.Werte['Energieverbrauch_Brennstofflager'])
+        self.Werte['Energie']       -= self.Werte['Energieverbrauch_Brennstofflager']*(2-self.Werte['Techstufe_Technik'])
+        self.Werte['Brennstoff_max'] = (self.Werte['Brennstoff_tankvolumen_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Brennstoff_tankvolumen_max']*0.2*self.Werte['Energieverbrauch_Brennstofflager'])
+
+
 
     async def ZugEnde(self, msg):
         await self.GeneratorStart(msg)
@@ -287,6 +310,8 @@ class Umgebung:
         await self.MultiStart(msg)
         await self.KommandoStart(msg)
         await self.GeheimlaborStart(msg)
+        await self.GeheimlagerStart(msg)
+
         await self.MesseStart(msg)
         await self.ServerraumStart(msg)
         await self.EnergiespeicherStart(msg)
@@ -294,19 +319,21 @@ class Umgebung:
         await self.LufttankStart(msg)
         await self.BrennstofflagerStart(msg)
         await self.SolarStart(msg)
-        self.Werte['Nahrung'] -= self.Werte['Nahrungsverbrauch_proZyklus']
-        self.Werte['Luft'] -= self.Werte['Luftverbrauch_Geheimlabor'] + self.Werte['Luftverbrauch_Module'] + self.Werte['Luftverbrauch_Recycling']
+
+
         self.Werte['Klick'] += 1
         await self.ZeigeStatus(msg)
         if (self.Werte['Energie'] < 0) or (self.Werte['Luft'] < 0) or (self.Werte['Nahrung'] < 0) or (self.Werte['Brennstoff'] < 0):
                  await self.schreibeNachricht(msg,f'Die Resourcen sind zuende gegangen!')
 
     async def Teilnehmen(self, msg):
+        if msg.channel.name != 'start-portal':
+            return
         # prüfen ob channel schon da ist
         name = self.parameter(msg, 1).strip().lower()
-        # channel erzeugen 
-        channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name) 
-        if channel is not None: 
+        # channel erzeugen
+        channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name)
+        if channel is not None:
             await self.schreibeNachricht(msg, 'Zugriff für diesen Namen verweigert. Wähle einen anderen.')
         else:
             category = discord.utils.find(lambda m: m.name=='Konsolen', msg.guild.categories)
@@ -316,22 +343,24 @@ class Umgebung:
                     msg.guild.me: discord.PermissionOverwrite(send_messages=True, read_messages=True)
                     }
             dest = await msg.guild.create_text_channel(f'konsole-{name}', overwrites=overwrites, category=category)
-            await dest.send(f'Willkommen {name}. Wünsche wohl geruht zu haben.') 
+            await dest.send(f'Willkommen {name}. Wünsche wohl geruht zu haben.')
             # nickname ändern - funktioniert nur bei normalen Benutzern, nicht bei Admins!
             try:
                 await msg.author.edit(nick = name)
                 await dest.send(f'Nickname wurde geändert.')
-            except: 
-                await self.schreibeNachricht(msg, f'Nickname des priviligierten Accounts konnte nicht geändert werden.') 
-                
-            
+            except:
+                await self.schreibeNachricht(msg, f'Nickname des priviligierten Accounts konnte nicht geändert werden.')
+            # entferne die Teilnahme-Nachricht
+            await msg.delete()
+
 
     async def Bewegen(self, msg):
         server = msg.guild
-        dest = discord.utils.find(lambda m: m.name.lower()==channel.lower() and channel.category=='Orte', server.voice_channels) 
+        channel = self.parameter(msg, 1)
+        dest = discord.utils.find(lambda m: m.name.lower()==channel.lower() and msg.channel.category=='Orte', server.voice_channels)
         text = ''
         if dest is None:
-            name = msg.author.name 
+            name = msg.author.nick
             category = discord.utils.find(lambda m: m.name=='Orte', server.categories)
             overwrites = {
                     msg.author: discord.PermissionOverwrite(connect=True, speak=True),
@@ -339,17 +368,17 @@ class Umgebung:
             dest = await server.create_voice_channel(channel, overwrites=overwrites, category=category)
             text = 'als erster '
         else:
-            await dest.set_permissions(msg.author, connect=True, speak=True) 
-       
+            await dest.set_permissions(msg.author, connect=True, speak=True)
+
         if msg.author.voice is not None:
           ch = msg.author.voice.channel
-          if ch is not None: 
-            await self.schreibeNachricht(msg, f'{msg.author.name} verlässt {msg.author.voice.channel} und betritt {text}{channel}')
+          if ch is not None:
+            await self.schreibeNachricht(msg, f'{msg.author.nick} verlässt {msg.author.voice.channel} und betritt {text}{channel}')
             await ch.set_permissions(msg.author, connect=False,speak=False)
           else:
-             await self.schreibeNachricht(msg, f'{msg.author.name} betritt {text}{channel} aus dem Nichts')
+             await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel} aus dem Nichts')
         else:
-            await self.schreibeNachricht(msg, f'{msg.author.name} betritt {text}{channel} aus dem Nichts') 
+            await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel} aus dem Nichts')
         await msg.author.move_to(dest, reason='betritt den Raum')
 
 
@@ -357,7 +386,7 @@ class Umgebung:
 
     #Hilfsfunktionen für discord
 
-    # Nachricht mit einem Bild, picture ist Filename 
+    # Nachricht mit einem Bild, picture ist Filename
     async def schreibeNachricht(self, msg, text, picture=None):
         if picture is None:
             await msg.channel.send(text)
@@ -367,6 +396,6 @@ class Umgebung:
                await msg.channel.send(msg.channel, picture)
 
     async def loggeLoeschen(self, msg):
-        await self.schreibeNachricht(msg, f'User {msg.author} hat eine Nachricht gelöscht.')
-        
-    
+        if msg.channel.name.startswith('konsole-'):
+            await self.schreibeNachricht(msg, f'User {msg.author.nick} hat eine Nachricht gelöscht.')
+
