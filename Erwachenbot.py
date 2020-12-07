@@ -17,7 +17,15 @@ async def on_message(message):
         await erwachen.befehl(message)
 
 @client.event
+async def on_raw_message_delete(message):
+    # löschen einer alten Nachricht
+    channel = client.get_channel(message.channel_id)
+    # in diesem Fall sind keine Informationen vorhanden 
+    await channel.send('Eine Nachricht wurde gelöscht')
+
+@client.event
 async def on_message_delete(message):
+    # lschen einer gecachten Nachricht
     await erwachen.loggeLoeschen(message)
 
 @client.event
