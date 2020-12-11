@@ -2,6 +2,7 @@ import discord
 import ast
 import csv
 import json
+import sys
 
 class Umgebung:
     async def fehler(self, msg):
@@ -27,13 +28,14 @@ class Umgebung:
         print(self.Werte)
 
     # Laed Werte aus einer gespeicherten Session
-    def LadeWerte(self, datei):
+    def LadeWerte(self, msg):
         self.Werte = []
-        with open(datei) as json_file:
-            self.Werte = json.load(datei)
+        with open(self.parameter(msg, 1), 'r') as json_file:
+            self.Werte = json.load(json_file)
 
-    def SchreibeWerte(self, datei):
-        json.dump(self.Werte, datei)
+    def SchreibeWerte(self, msg):
+        with open(self.parameter(msg, 1), 'w') as json_file:
+            json.dump(self.Werte, json_file)
 
     # laed die CSV Datei mit den Startwerten
     def LadeStartWerte(self, msg=None):
@@ -219,7 +221,7 @@ class Umgebung:
     async def AquaStart(self, msg):
         self.Werte['Energie']    -= self.Werte['Energieverbrauch_Aqua'] * (2-self.Werte['Techstufe_Facility'])
         self.Werte['Luft']       += self.Werte['Energieverbrauch_Aqua'] * self.Werte['Energieanteil_Aqua_Lufterzeugung'] * self.Werte['Techstufe_Aqua'] * self.Werte['Lufterzeugung_Anpassungsfaktor']
-        self.Werte['Nahrung']    += self.Werte['Energieverbrauch_Aqua'] * (2-self.Werte['Energieanteil_Aqua_Lufterzeugung'])*self.Werte['Techstufe_Aqua']*self.Werte['Nahrungs_Anpassungsfaktor']
+        self.Werte['Nahrung']    += self.Werte['Energieverbrauch_Aqua'] * (1-self.Werte['Energieanteil_Aqua_Lufterzeugung'])*self.Werte['Techstufe_Aqua']*self.Werte['Nahrungs_Anpassungsfaktor']
         self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Aqua'] * (2-self.Werte['Techstufe_Recycling'])
 
 
@@ -230,7 +232,7 @@ class Umgebung:
     async def BioStart(self, msg):
         self.Werte['Energie']       -= self.Werte['Energieverbrauch_Bio'] * (2-self.Werte['Techstufe_Facility'])
         self.Werte['Luft']          += self.Werte['Energieverbrauch_Bio'] * self.Werte['Energieanteil_Bio_Lufterzeugung'] * self.Werte['Techstufe_Bio'] * self.Werte['Lufterzeugung_Anpassungsfaktor']
-        self.Werte['Nahrung']       += self.Werte['Energieverbrauch_Bio'] * (2-self.Werte['Energieanteil_Bio_Lufterzeugung'])*self.Werte['Techstufe_Bio']*self.Werte['Nahrungs_Anpassungsfaktor']
+        self.Werte['Nahrung']       += self.Werte['Energieverbrauch_Bio'] * (1-self.Werte['Energieanteil_Bio_Lufterzeugung'])*self.Werte['Techstufe_Bio']*self.Werte['Nahrungs_Anpassungsfaktor']
         self.Werte['Brennstoff']    -= self.Werte['Energieverbrauch_Bio'] * (2-self.Werte['Techstufe_Recycling'])
 
 
@@ -355,33 +357,60 @@ class Umgebung:
 
 
     async def Bewegen(self, msg):
-        server = msg.guild
-        channel = self.parameter(msg, 1)
-        dest = discord.utils.find(lambda m: m.name.lower()==channel.lower() and msg.channel.category=='Orte', server.voice_channels)
-        text = ''
-        if dest is None:
-            name = msg.author.nick
-            category = discord.utils.find(lambda m: m.name=='Orte', server.categories)
-            overwrites = {
-                    msg.author: discord.PermissionOverwrite(connect=True, speak=True),
-                    }
-            dest = await server.create_voice_channel(channel, overwrites=overwrites, category=category)
-            text = 'als erster '
-        else:
-            await dest.set_permissions(msg.author, connect=True, speak=True)
-
-        if msg.author.voice is not None:
+        try:
           ch = msg.author.voice.channel
-          if ch is not None:
-            await self.schreibeNachricht(msg, f'{msg.author.nick} verlässt {msg.author.voice.channel} und betritt {text}{channel}')
-            await ch.set_permissions(msg.author, connect=False,speak=False)
-          else:
-             await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel} aus dem Nichts')
-        else:
-            await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel} aus dem Nichts')
-        await msg.author.move_to(dest, reason='betritt den Raum')
-
-
+          if ch is None:
+            raise ValueError('Kein Sprachkanal vorhanden.')
+        except:
+             await self.schreibeNachricht(msg, 'Bewegen ohne Sprachverbindung ist nicht möglich. Bitte erst verbinden.')
+             return
+        server = msg.guild
+        channel = self.parameter(msg, 1).strip()
+        # Bewegung nur in bekannte und aktivierte Module
+        try:
+            if self.Werte['Modul_'+channel] == 1:
+                dest = discord.utils.find(lambda m: m.name==channel and m.category.name=='Orte', server.voice_channels)
+                text = ''
+                overwrites = {
+                            msg.author: discord.PermissionOverwrite(connect=True, speak=True, view_channel=True),
+                            }
+                if dest is None:
+                    name = msg.author.nick
+                    category = discord.utils.find(lambda m: m.name=='Orte', server.categories)
+                    dest = await server.create_voice_channel(channel, overwrites=overwrites, category=category)
+                    text = 'als erster '
+                else:
+                       perms = dest.overwrites_for(msg.author)
+                       perms.connect=True
+                       perms.speak=True
+                       perms.view_channel=True
+                       await dest.set_permissions(msg.author, overwrite=perms, reason="Bewegen-Command")
+                try:
+                  if msg.author.voice is not None:
+                    ch = msg.author.voice.channel
+                    if ch is not None:
+                      if ch.category.name=='Orte':
+                        await self.schreibeNachricht(msg, f'{msg.author.nick} verlässt {msg.author.voice.channel} und betritt {text}{channel}')
+                        perms = msg.author.voice.channel.overwrites_for(msg.author)
+                        perms.connect=False
+                        perms.speak=False
+                        perms.view_channel=False
+                        await msg.author.voice.channel.set_permissions(msg.author, overwrite=perms, reason="Bewegen-Command")
+                      else:
+                        await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel} von ausserhalb kommend')
+                    else:
+                      await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel}, ist aber nicht verbunden')
+                      
+                  else:
+                      await self.schreibeNachricht(msg, f'{msg.author.nick} betritt {text}{channel} ohne Sprachverbindung.')
+                      return True
+                except:
+                  await self.schreibeNachricht(msg, 'Fehler beim Sprachkanal')
+                await msg.author.move_to(dest, reason='betritt den Raum')                
+            else:
+                await self.schreibeNachricht(msg, 'Modul unbekannt oder deaktiviert.')
+        except KeyError:
+            await self.schreibeNachricht(msg,'Unbekannter Raum')
 
 
     #Hilfsfunktionen für discord
@@ -399,3 +428,16 @@ class Umgebung:
         if msg.channel.name.startswith('konsole-'):
             await self.schreibeNachricht(msg, f'User {msg.author.nick} hat eine Nachricht gelöscht.')
 
+    async def testBefehl(self, msg):
+        server = msg.guild
+        member = server.get_member_named(msg.author.nick)
+        print (member)
+        await member.edit(nick="test")
+
+        channel = self.parameter(msg, 1)
+        user = self.parameter(msg,2)
+        dest = discord.utils.find(lambda m: m.name==channel , server.members)
+        print (dest)
+        print (msg.author.voice )
+        await msg.author.edit(nick=channel)
+                
