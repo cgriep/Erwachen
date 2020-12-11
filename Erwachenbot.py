@@ -3,8 +3,11 @@ import discord
 
 TOKEN = ''
  
+intents = discord.Intents.default()
+intents.members = True
+
 erwachen = Erwachen.Umgebung()
-client = discord.Client()
+client = discord.Client(intents=intents,chunk_guilds_at_startup=True,guild_subscriptions=True)
 
 @client.event 
 async def on_message(message):
