@@ -46,7 +46,7 @@ class Umgebung:
         self.Werte['Klick'] = 0
 
     #
-    def parameter(self, msg, nr):
+    def parameter(self, msg, nr=9999):
         eingaben = msg.content.split(' ')
         if len(eingaben)-1 < nr:
             return 'Fehler'
@@ -54,7 +54,7 @@ class Umgebung:
             return eingaben[nr].strip()
 
     # Wert mit Überprüfung setzen
-    async def setzeWert(self, msg, wertname, wert, pruefwertname=''):
+    async def setzeWert(self, msg, wertname=None, wert='', pruefwertname=''):
         if not wert.isnumeric():
             await self.schreibeNachricht(msg,f'Der Wert "{wert}" ist ungültig. Kommando nicht ausführbar.')
             return(False)
@@ -78,10 +78,12 @@ class Umgebung:
             else:
                 await self.setzeWert(msg, name, par)
 
-    async def aendereWert(self, msg, bezeichnung):
+    async def aendereWert(self, msg, bezeichnung=None):
         await self.setzeWert(msg, f'Energieverbrauch_{bezeichnung}', self.parameter(msg,1), f'Energieverbrauch_{bezeichnung}_max')
 
-    async def Anzeige(self, msg, bezeichnung, text=None):
+    async def Anzeige(self, msg, bezeichnung=None, text=None):
+        if bezeichnung is None:
+          self.schreibeNachricht(msg, 'Unbekannter Befehl.')
         if text is None:
             text = bezeichnung
         text = f'{text}energie ist eingestellt auf ' + str(self.Werte[f'Energieverbrauch_{bezeichnung}'] ) + ' von ' + str(self.Werte[f'Energieverbrauch_{bezeichnung}_max'])
@@ -352,10 +354,13 @@ class Umgebung:
                 await dest.send(f'Nickname wurde geändert.')
             except:
                 await self.schreibeNachricht(msg, f'Nickname des priviligierten Accounts konnte nicht geändert werden.')
+            perms = msg.channel.overwrites_for(msg.author)
+            perms.write_messages=False
+            perms.read_messages=False
+            await msg.channel.set_permissions(msg.author, overwrite=perms, reason="Teilnehmen-Command")
             # entferne die Teilnahme-Nachricht
             await msg.delete()
-
-
+            
     async def Bewegen(self, msg):
         try:
           ch = msg.author.voice.channel
@@ -364,8 +369,15 @@ class Umgebung:
         except:
              await self.schreibeNachricht(msg, 'Bewegen ohne Sprachverbindung ist nicht möglich. Bitte erst verbinden.')
              return
+        if ch.category.name != 'Orte':
+            await self.schreibeNachricht(msg,' Bewegen nur mit Sprachverbindung in einem Ort möglich.')
+            return
         server = msg.guild
         channel = self.parameter(msg, 1).strip()
+        if channel == ch.name:
+            await self.schreibeNachricht(msg,' Ort ist bereits erreicht.')
+            return
+    
         # Bewegung nur in bekannte und aktivierte Module
         try:
             if self.Werte['Modul_'+channel] == 1:
@@ -412,11 +424,39 @@ class Umgebung:
         except KeyError:
             await self.schreibeNachricht(msg,'Unbekannter Raum')
 
+    async def Konsole(self, msg):
+        name = self.parameter(msg, 1)
+        text = self.parameter(msg, 2)
+        if name != 'Fehler' and text != 'Fehler':
+            channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name)
+            if channel is None:
+              await self.schreibeNachricht(msg, 'Unbekannte Konsole')
+              return
+            await channel.send('*** Konsolennachricht: ***\n'+msg.content[(len(name)+1+7+1):])
+        else:
+            await self.schreibeNachricht(msg, 'Unbekannte Konsole')
+
+    async def KonsoleHack(self, msg):
+        name = self.parameter(msg, 1)
+        anz = self.parameter(msg, 2)
+        if not anz.isnumeric():
+          anz = 2
+        if name != 'Fehler':
+            channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name)
+            if channel is None:
+              await self.schreibeNachricht(msg, 'Unbekannte Konsole')
+              return
+            text = f'***Hack Konsole {name}: ***\n'
+            async for message in channel.history(limit=anz):
+              text += message.content + '\n'             
+            await self.schreibeNachricht(msg,text)
+        else:
+            await self.schreibeNachricht(msg, 'Unbekannte Konsole')
 
     #Hilfsfunktionen für discord
 
     # Nachricht mit einem Bild, picture ist Filename
-    async def schreibeNachricht(self, msg, text, picture=None):
+    async def schreibeNachricht(self, msg, text=None, picture=None):
         if picture is None:
             await msg.channel.send(text)
         else:
@@ -426,18 +466,20 @@ class Umgebung:
 
     async def loggeLoeschen(self, msg):
         if msg.channel.name.startswith('konsole-'):
-            await self.schreibeNachricht(msg, f'User {msg.author.nick} hat eine Nachricht gelöscht.')
+            if msg.author.nick == None:
+              await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde gelöscht.')
+            else:
+              await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.nick} wurde gelöscht.')
 
     async def testBefehl(self, msg):
         server = msg.guild
-        member = server.get_member_named(msg.author.nick)
-        print (member)
-        await member.edit(nick="test")
-
-        channel = self.parameter(msg, 1)
-        user = self.parameter(msg,2)
-        dest = discord.utils.find(lambda m: m.name==channel , server.members)
-        print (dest)
-        print (msg.author.voice )
-        await msg.author.edit(nick=channel)
-                
+  
+    async def Hilfe(self, msg):
+        await self.schreibeNachricht(msg, '*Systemüberblick*  \n' +
+        'Wert \n'+
+        'Bewegen <Raum> \n'+
+        'ZeigeStatus \n'+
+        '<Station>Energie <Wert>\n'+
+        '<Station>Anzeige \n'
+        )
+        
