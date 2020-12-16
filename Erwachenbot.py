@@ -1,8 +1,8 @@
 import Erwachen
 import discord 
 
-TOKEN = 'NzgyMTkzNTc0MzQ2ODgzMDgy.X8IoiA.3_vgU1AagsqsdVj6ylj55fBVln8'
- 
+TOKEN = open("Token.txt", "r").read()
+
 intents = discord.Intents.default()
 intents.members = True
 
