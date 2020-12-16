@@ -1,7 +1,7 @@
 import Erwachen
 import discord 
 
-TOKEN = ''
+TOKEN = 'NzgyMTkzNTc0MzQ2ODgzMDgy.X8IoiA.3_vgU1AagsqsdVj6ylj55fBVln8'
  
 intents = discord.Intents.default()
 intents.members = True
@@ -22,9 +22,11 @@ async def on_message(message):
 @client.event
 async def on_raw_message_delete(message):
     # löschen einer alten Nachricht
-    channel = client.get_channel(message.channel_id)
-    # in diesem Fall sind keine Informationen vorhanden 
-    await channel.send('Eine Nachricht wurde gelöscht')
+    if message.cached_message == None:
+        channel = client.get_channel(message.channel_id)
+        guild = client.get_guild(message.guild_id)
+        print ( 'Eine Nachricht wurde gelöscht')
+        #await erwachen.loggeLoeschen(None, msg)
 
 @client.event
 async def on_message_delete(message):
