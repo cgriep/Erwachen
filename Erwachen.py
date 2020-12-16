@@ -54,13 +54,18 @@ class Umgebung:
             return eingaben[nr].strip()
 
     # Wert mit Überprüfung setzen
-    async def setzeWert(self, msg, wertname=None, wert='', pruefwertname=''):
+    async def setzeWert(self, msg, wertname=None, wert='', pruefwertname='', div=1):
         if not wert.isnumeric():
             await self.schreibeNachricht(msg,f'Der Wert "{wert}" ist ungültig. Kommando nicht ausführbar.')
             return(False)
-        wert = float(wert)
-        if pruefwertname != '':
-            if (wert > self.Werte[pruefwertname]) or (wert < 0):
+        wert = float(wert)/div
+        pruefwert = 9999
+        if not pruefwertname.isnumeric():
+          if pruefwertname != '':
+            pruefwert = self.Werte[pruefwertname]
+        else:
+          pruefwert = pruefwertname
+        if (wert > pruefwert) or (wert < 0):
                 await self.schreibeNachricht(msg,f'Der Wert {wert} ist nicht erlaubt. Kommando nicht ausführbar.')
                 return(False)
         self.Werte[wertname] = wert
@@ -78,8 +83,8 @@ class Umgebung:
             else:
                 await self.setzeWert(msg, name, par)
 
-    async def aendereWert(self, msg, bezeichnung=None):
-        await self.setzeWert(msg, f'Energieverbrauch_{bezeichnung}', self.parameter(msg,1), f'Energieverbrauch_{bezeichnung}_max')
+    async def aendereWert(self, msg, bezeichnung=None, Art='Energieverbrauch', div=1):
+        await self.setzeWert(msg, f'{Art}_{bezeichnung}', self.parameter(msg,1), f'{Art}_{bezeichnung}_max', div)
 
     async def Anzeige(self, msg, bezeichnung=None, text=None):
         if bezeichnung is None:
@@ -90,6 +95,15 @@ class Umgebung:
         await self.schreibeNachricht(msg,text)
 
     # Spielbefehle Anzeige / Wertänderung
+    async def KommandosHelp(self, msg):
+        await self.schreibeNachricht(msg,f'***Kommandos:*** \n' +
+                                       'AnzeigeStatus     > Zeige den System-Status an \n' +
+                                       'Bewegen *Ort*      > Gehe in das entsprechende Modul \n' +
+                                       '*Modul*Anzeige    > Anzeige des Modul-Status \n' +
+                                       '*Modul*Energie *Zahl* > Änderung der Modul-Energie \n'       
+                                                        )
+
+
     async def GeneratorEnergie(self, msg):
         await self.aendereWert(msg, 'Generator')
 
@@ -115,10 +129,17 @@ class Umgebung:
     async def AquaEnergie(self, msg):
         await self.aendereWert(msg, 'Aqua')
 
-    async def BioEnergie(self, msg):
+    async def AquaVerhaeltnis(self, msg):
+        await self.aendereWert(msg, 'Aqua_Lufterzeugung', 'Energieanteil',100)
+
+
+    async def BiotopVerhaeltnis(self, msg):
+        await self.aendereWert(msg, 'Bio_Lufterzeugung', 'Energieanteil',100)
+
+    async def BiotopEnergie(self, msg):
         await self.aendereWert(msg, 'Bio')
 
-    async def BioAnzeige(self, msg):
+    async def BiotopAnzeige(self, msg):
         await self.schreibeNachricht(msg,f'Energieverbrauch Biotopmodul: ' +
                                        str(self.Werte['Energieverbrauch_Bio']) +
                                        ' von '+
@@ -212,7 +233,7 @@ class Umgebung:
     async def SolarAnzeige(self, msg):
         await self.Anzeige(msg,'Solar')
 
-    async def ZeigeStatus(self, msg):
+    async def AnzeigeStatus(self, msg):
         await self.schreibeNachricht(msg,f' *** System-Status *** || *Klick ' + str(self.Werte['Klick']) + '* \n ' +
                 'Energie      = '+ str(self.Werte['Energie']) + ' von maximal: ' + str(self.Werte['Energie_max']) + ' \n ' +
                 'Brennstoff = ' + str(self.Werte['Brennstoff']) + ' von maximal: ' + str(self.Werte['Brennstoff_max']) + ' \n' +
@@ -326,12 +347,13 @@ class Umgebung:
 
 
         self.Werte['Klick'] += 1
-        await self.ZeigeStatus(msg)
+        await self.AnzeigeStatus(msg)
         if (self.Werte['Energie'] < 0) or (self.Werte['Luft'] < 0) or (self.Werte['Nahrung'] < 0) or (self.Werte['Brennstoff'] < 0):
                  await self.schreibeNachricht(msg,f'Die Resourcen sind zuende gegangen!')
 
     async def Teilnehmen(self, msg):
         if msg.channel.name != 'start-portal':
+            await self.schreibeNachricht(msg,'***System Error*** Erwachung ohne Schlaf')
             return
         # prüfen ob channel schon da ist
         name = self.parameter(msg, 1).strip().lower()
@@ -452,6 +474,7 @@ class Umgebung:
             await self.schreibeNachricht(msg,text)
         else:
             await self.schreibeNachricht(msg, 'Unbekannte Konsole')
+        await self.schreibeSystemnachricht(msg, f'Hack auf Konsole {name} durch {msg.author.nick}')
 
     #Hilfsfunktionen für discord
 
@@ -464,12 +487,29 @@ class Umgebung:
                picture = discord.File(f)
                await msg.channel.send(msg.channel, picture)
 
-    async def loggeLoeschen(self, msg):
+    async def schreibeSystemnachricht(self, msg, text=None):
+        print (f'Systemnachricht {text}')
+        if text is None:
+          return
+        channel = discord.utils.get(msg.guild.text_channels, name='konsole-system')
+        if channel is None:
+            category = discord.utils.find(lambda m: m.name=='Konsolen', msg.guild.categories)
+            overwrites = {
+                    msg.guild.default_role: discord.PermissionOverwrite(send_messages=False, read_messages=False),
+                    msg.guild.me: discord.PermissionOverwrite(send_messages=True, read_messages=True)
+                    }
+            channel = await msg.guild.create_text_channel(f'konsole-system', overwrites=overwrites, category=category)
+            await channel.send('***Systeminitialisierung*** Bootvorgang erfolgreich.')
+        await channel.send(text)
+
+    async def loggeLoeschen(self, msg, add=None):
         if msg.channel.name.startswith('konsole-'):
             if msg.author.nick == None:
-              await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde gelöscht.')
+              #await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde gelöscht.')
+              await self.schreibeSystemnachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde in {msg.channel.name} gelöscht.')
             else:
-              await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.nick} wurde gelöscht.')
+              #await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.nick} wurde gelöscht.')
+              await self.schreibeSystemnachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde in {msg.channel.name} gelöscht.')
 
     async def testBefehl(self, msg):
         server = msg.guild
@@ -478,7 +518,7 @@ class Umgebung:
         await self.schreibeNachricht(msg, '*Systemüberblick*  \n' +
         'Wert \n'+
         'Bewegen <Raum> \n'+
-        'ZeigeStatus \n'+
+        'AnzeigeStatus \n'+
         '<Station>Energie <Wert>\n'+
         '<Station>Anzeige \n'
         )
