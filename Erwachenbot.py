@@ -26,7 +26,7 @@ async def on_raw_message_delete(message):
         channel = client.get_channel(message.channel_id)
         guild = client.get_guild(message.guild_id)
         print ( 'Eine Nachricht wurde gelöscht')
-        #await erwachen.loggeLoeschen(None, msg)
+        await erwachen.loggeLoeschen(None, channel)
 
 @client.event
 async def on_message_delete(message):
@@ -41,6 +41,11 @@ async def on_member_join(member):
 @client.event
 async def on_ready():
     print(f'{client.user} has connected to Discord!')
-
+    # setze Avatar-Bild
+    try:
+      with open('hal.jpg', 'rb') as f:
+        await client.user.edit(avatar=f.read())
+    except:
+      print('Fehler beim Avatar-setzen')
 
 client.run(TOKEN)
