@@ -42,7 +42,13 @@ class Umgebung:
         self.Werte = []
         with open('Initialwerte.csv', 'r') as datei:
             reader = csv.reader(datei, delimiter = ',')
-            self.Werte = {rows[0]:float(rows[1]) for rows in reader}
+            self.Werte = {rows[0]:rows[1] for rows in reader}
+        for wert in list(self.Werte):
+          try:     
+            self.Werte[wert] = float(self.Werte[wert])
+          except: 
+            # Textwerte, keine Aktion
+            text = 1
         self.Werte['Klick'] = 0
 
     #
@@ -59,7 +65,7 @@ class Umgebung:
             await self.schreibeNachricht(msg,f'Der Wert "{wert}" ist ungültig. Kommando nicht ausführbar.')
             return(False)
         ch = self.getOrtChannel(msg).name
-        if wertname.find(ch) == -1:   
+        if wertname.find('_'+ch) == -1:   
              await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt')
              await self.schreibeSystemnachricht(msg, f'Manipulationsversuch von {msg.author.nick} auf {wertname} von ausserhalb') 
              return
@@ -92,12 +98,23 @@ class Umgebung:
     async def aendereWert(self, msg, bezeichnung=None, Art='Energieverbrauch', div=1):
         await self.setzeWert(msg, f'{Art}_{bezeichnung}', self.parameter(msg,1), f'{Art}_{bezeichnung}_max', div)
 
+    async def Energie(self, msg):
+        await self.setzeWert(msg, f'Energieverbrauch_'+self.parameter(msg, 1), self.parameter(msg, 2), f'Energieverbrauch_'+self.parameter(msg, 1)+'_max')
+
     async def Anzeige(self, msg, bezeichnung=None, text=None, add=None):
         if bezeichnung is None:
-          self.schreibeNachricht(msg, 'Unbekannter Befehl.')
+          bezeichnung = self.parameter(msg, 1) 
+        if bezeichnung is None or bezeichnung == 'Fehler':
+          await self.schreibeNachricht(msg, 'Unbekannter Befehl.')
           return
-        if text is None:
-            text = bezeichnung
+        # prüfe ob eine Übersetzung vorhanden ist 
+        try:
+            text = self.Werte['Text_'+bezeichnung]
+        except:
+            pass
+        if bezeichnung == 'Status':
+          await self.AnzeigeStatus(msg)
+          return
         try:
           ch = self.getOrtChannel(msg).name
           if ch == bezeichnung or ch == text:                
@@ -111,7 +128,43 @@ class Umgebung:
             await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} aus {ch}') 
         except:
           await self.schreibeNachricht(msg, '***Critical System Error***')
-          await self.schreibeSystemnachricht(msg, 'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} von ausserhalb') 
+          await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} von ausserhalb') 
+
+    async def ModulSchalten(self, msg):
+        modul = self.parameter(msg, 1)
+        override = self.parameter(msg, 2)
+        if modul == 'Fehler':
+          await self.schreibeNachricht(msg, 'Unbekannter Befehl')
+          return
+        try:
+          ch = self.getOrtChannel(msg).name
+          if ch != 'Kommandoraum':
+            await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt.')
+            await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} aus {ch}') 
+            return
+          if self.Werte['Modul_'+modul] == 1:
+            # ausschalten
+            dest = discord.utils.find(lambda m: m.name==modul and m.category.name=='Orte', msg.guild.voice_channels)
+            if dest is not None:
+              if override == 'Fehler' and (len(dest.members) > 0):
+                await self.schreibeNachricht(msg, 'Es befinden sich noch Personen im Modul. Override notwendig.')
+                return
+            self.Werte['Modul_'+modul] = 0
+            text = ''
+            print (override)
+            if override == '!':
+              text = 'zwangsweise '
+            await self.schreibeNachricht(msg, f'Modul {modul} {text}abgeschaltet.')            
+            await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} {text}ausgeschaltet.')
+          else:
+            # einschalten
+            await self.schreibeNachricht(msg, f'Modul {modul} eingeschaltet.')
+            await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} eingeschaltet.')
+            self.Werte['Modul_'+modul] = 1
+        except:
+          await self.schreibeNachricht(msg, '***Critical System Error***')
+          await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} von ausserhalb') 
+
 
     # Spielbefehle Anzeige / Wertänderung
     async def KommandosHelp(self, msg):
@@ -121,19 +174,19 @@ class Umgebung:
                                        '*Modul*Anzeige    > Anzeige des Modul-Status \n' +
                                        '*Modul*Energie *Zahl* > Änderung der Modul-Energie \n'       
                                                         )
+        await self.schreibeSystemnachricht(msg, 'Status von {msg.author.nick} abgerufen')
 
+    async def GeneratorraumEnergie(self, msg):
+        await self.aendereWert(msg, 'Generatorraum')
 
-    async def GeneratorEnergie(self, msg):
-        await self.aendereWert(msg, 'Generator')
+    async def GeneratorraumAnzeige(self, msg):
+        await self.Anzeige(msg, 'Generatorraum')
 
-    async def GeneratorAnzeige(self, msg):
-        await self.Anzeige(msg, 'Generator')
+    async def RecyclingraumAnzeige(self, msg):
+        await self.Anzeige(msg, 'Recyclingraum')
 
-    async def RecyclingAnzeige(self, msg):
-        await self.Anzeige(msg, 'Recycling')
-
-    async def RecyclingEnergie(self, msg):
-        await self.aendereWert(msg, 'Recycling')
+    async def RecyclingraumEnergie(self, msg):
+        await self.aendereWert(msg, 'Recyclingraum')
 
     async def AquatoriumAnzeige(self, msg):
         await self.Anzeige(msg, 'Aquatorium', 'Aquatorium', 'Anteil Luft-/Nahrungserzeugung: ' +
@@ -151,16 +204,7 @@ class Umgebung:
         await self.aendereWert(msg, 'Bio_Lufterzeugung', 'Energieanteil',100)
 
     async def BiotopEnergie(self, msg):
-        try:
-            ch = self.getOrtChannel(msg).name
-            if ch == 'Biotop':
-                await self.aendereWert(msg, 'Biotop')                
-            else:
-                await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt.')
-                await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf Biotop aus {ch}') 
-        except:
-            await self.schreibeNachricht(msg, '***Critical System Error***')
-            await self.schreibeSystemnachricht(msg, 'Zugriffsversuch von {msg.author.nick} auf Biotop von ausserhalb') 
+        await self.aendereWert(msg, 'Biotop')   
 
     async def BiotopAnzeige(self, msg):
         await self.Anzeige(msg, 'Biotop', 'Biotopmodul', 'Anteil Luft-/Nahrungserzeugung: ' +
@@ -171,7 +215,7 @@ class Umgebung:
         await self.aendereWert(msg, 'Aussenhuelle')
 
     async def AussenhuelleAnzeige(self, msg):
-        await self.Anzeige(msg, 'Aussenhuelle', 'Außenhülle')
+        await self.Anzeige(msg, 'Aussenhuelle')
 
     async def LufttankEnergie(self, msg):
         await self.aendereWert(msg, 'Lufttank')
@@ -179,11 +223,11 @@ class Umgebung:
     async def LufttankAnzeige(self, msg):
         await self.Anzeige(msg, 'Lufttank')
 
-    async def KuehlmodulEnergie(self, msg):
-        await self.aendereWert(msg,'Kuehlmodul')
+    async def KuehlhausEnergie(self, msg):
+        await self.aendereWert(msg,'Kuehlhaus')
 
-    async def KuehlmodulAnzeige(self, msg):
-        await self.Anzeige(msg,'Kuehlmodul', 'Kühlmodul')
+    async def KuehlhausAnzeige(self, msg):
+        await self.Anzeige(msg,'Kuehlhaus')
 
     async def ServerraumEnergie(self, msg):
         await self.aendereWert(msg,'Serverraum')
@@ -239,11 +283,11 @@ class Umgebung:
     async def BrennstofflagerAnzeige(self, msg):
         await self.Anzeige(msg,'Brennstofflager')
 
-    async def ForschungsmodulEnergie(self, msg):
-        await self.aendereWert(msg,'Forschungsmodul')
+    async def ForschungslaborEnergie(self, msg):
+        await self.aendereWert(msg,'Forschungslabor')
 
-    async def ForschungsmodulAnzeige(self, msg):
-        await self.Anzeige(msg,'Forschungsmodul')
+    async def ForschungslaborAnzeige(self, msg):
+        await self.Anzeige(msg,'Forschungslabor')
 
     async def SolarsteuerungEnergie(self, msg):
         await self.aendereWert(msg,'Solarsteuerung')
@@ -263,7 +307,7 @@ class Umgebung:
         self.Werte['Energie']    -= self.Werte['Energieverbrauch_Aquatorium'] * (2-self.Werte['Techstufe_Facility'])
         self.Werte['Luft']       += self.Werte['Energieverbrauch_Aquatorium'] * self.Werte['Energieanteil_Aquatorium_Lufterzeugung'] * self.Werte['Techstufe_Aquatorium'] * self.Werte['Lufterzeugung_Anpassungsfaktor']
         self.Werte['Nahrung']    += self.Werte['Energieverbrauch_Aquatorium'] * (1-self.Werte['Energieanteil_Aquatorium_Lufterzeugung'])*self.Werte['Techstufe_Aquatorium']*self.Werte['Nahrungs_Anpassungsfaktor']
-        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Aquatorium'] * (2-self.Werte['Techstufe_Recycling'])
+        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Aquatorium'] * (2-self.Werte['Techstufe_Recyclingraum'])
 
 
     async def AussenhuelleStart(self, msg):
@@ -274,12 +318,12 @@ class Umgebung:
         self.Werte['Energie']       -= self.Werte['Energieverbrauch_Biotop'] * (2-self.Werte['Techstufe_Facility'])
         self.Werte['Luft']          += self.Werte['Energieverbrauch_Biotop'] * self.Werte['Energieanteil_Biotop_Lufterzeugung'] * self.Werte['Techstufe_Biotop'] * self.Werte['Lufterzeugung_Anpassungsfaktor']
         self.Werte['Nahrung']       += self.Werte['Energieverbrauch_Biotop'] * (1-self.Werte['Energieanteil_Biotop_Lufterzeugung'])*self.Werte['Techstufe_Biotop']*self.Werte['Nahrungs_Anpassungsfaktor']
-        self.Werte['Brennstoff']    -= self.Werte['Energieverbrauch_Biotop'] * (2-self.Werte['Techstufe_Recycling'])
+        self.Werte['Brennstoff']    -= self.Werte['Energieverbrauch_Biotop'] * (2-self.Werte['Techstufe_Recyclingraum'])
 
 
 
-    async def ForschungsmodulStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Forschungsmodul']*(2-self.Werte['Techstufe_Ingenieur'])
+    async def ForschungslaborStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Forschungslabor']*(2-self.Werte['Techstufe_Ingenieur'])
 
 
     async def GeheimlaborStart(self, msg):
@@ -288,9 +332,9 @@ class Umgebung:
     async def GeheimlagerStart(self, msg):
         self.Werte['Energie'] -= self.Werte['Energieverbrauch_Geheimlager']*(2-self.Werte['Techstufe_Kollaborateur'])
 
-    async def GeneratorStart(self, msg):
-        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Generator']*(2-self.Werte['Techstufe_Ingenieur'])
-        self.Werte['Energie']    += self.Werte['Energieverbrauch_Generator']*self.Werte['Generatorfaktor']*self.Werte['Techstufe_Ingenieur']-self.Werte['Energieverbrauch_Generator']
+    async def GeneratorraumStart(self, msg):
+        self.Werte['Brennstoff'] -= self.Werte['Energieverbrauch_Generatorraum']*(2-self.Werte['Techstufe_Ingenieur'])
+        self.Werte['Energie']    += self.Werte['Energieverbrauch_Generatorraum']*self.Werte['Generatorraumfaktor']*self.Werte['Techstufe_Ingenieur']-self.Werte['Energieverbrauch_Generatorraum']
 
     async def MesseStart(self, msg):
         self.Werte['Energie'] -= self.Werte['Energieverbrauch_Messe']*(2-self.Werte['Techstufe_Facility'])
@@ -311,12 +355,12 @@ class Umgebung:
         self.Werte['Energie'] -= self.Werte['Energieverbrauch_Serverraum']*(2-self.Werte['Techstufe_Informatik'])
 
     async def SolarsteuerungStart(self, msg):
-        self.Werte['Energie'] += self.Werte['Energieverbrauch_Solarsteuerung']*self.Werte['Techstufe_Technik']*self.Werte['Solarfaktor'] - self.Werte['Energieverbrauch_Solarsteuerung']
+        self.Werte['Energie'] += self.Werte['Energieverbrauch_Solarsteuerung']*self.Werte['Techstufe_Technik']*self.Werte['Solarsteuerungfaktor'] - self.Werte['Energieverbrauch_Solarsteuerung']
 
-    async def RecyclingStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Recycling']*(2-self.Werte['Techstufe_Recycling'])
-        self.Werte['Luft'] -= self.Werte['Energieverbrauch_Recycling']*(2-self.Werte['Techstufe_Recycling'])
-        self.Werte['Brennstoff'] += self.Werte['Energieverbrauch_Recycling']*self.Werte['Brennstoff_Anpassungsfaktor']*self.Werte['Techstufe_Recycling']
+    async def RecyclingraumStart(self, msg):
+        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Recyclingraum']*(2-self.Werte['Techstufe_Recyclingraum'])
+        self.Werte['Luft'] -= self.Werte['Energieverbrauch_Recyclingraum']*(2-self.Werte['Techstufe_Recyclingraum'])
+        self.Werte['Brennstoff'] += self.Werte['Energieverbrauch_Recyclingraum']*self.Werte['Brennstoff_Anpassungsfaktor']*self.Werte['Techstufe_Recyclingraum']
 
 
     # Lager/ Systemwerte
@@ -325,9 +369,9 @@ class Umgebung:
         self.Werte['Energie']    -= self.Werte['Energieverbrauch_Energiespeicher']*(2-self.Werte['Techstufe_Facility']) + self.Werte['Energieverbrauch_Verluste']
         self.Werte['Energie_max'] = (self.Werte['Energiespeicher_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Energiespeicher_max']*0.2*self.Werte['Energieverbrauch_Energiespeicher'])
 
-    async def KuehlmodulStart(self, msg):
-        self.Werte['Energie']    -= self.Werte['Energieverbrauch_Kuehlmodul']*(2-self.Werte['Techstufe_Facility'])
-        self.Werte['Nahrung_max'] = (self.Werte['Nahrungsspeicher_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Nahrungsspeicher_max']*0.2*self.Werte['Energieverbrauch_Kuehlmodul'])
+    async def KuehlhausStart(self, msg):
+        self.Werte['Energie']    -= self.Werte['Energieverbrauch_Kuehlhaus']*(2-self.Werte['Techstufe_Facility'])
+        self.Werte['Nahrung_max'] = (self.Werte['Nahrungsspeicher_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Nahrungsspeicher_max']*0.2*self.Werte['Energieverbrauch_Kuehlhaus'])
         self.Werte['Nahrung']    -= self.Werte['Nahrungsverbrauch_proZyklus']
 
     async def LufttankStart(self, msg):
@@ -342,12 +386,13 @@ class Umgebung:
 
 
     async def ZugEnde(self, msg):
-        await self.GeneratorStart(msg)
+        await self.schreibeSystemnachricht(msg, '*Processing commands*')
+        await self.GeneratorraumStart(msg)
         await self.BiotopStart(msg)
         await self.AquatoriumStart(msg)
-        await self.RecyclingStart(msg)
+        await self.RecyclingraumStart(msg)
         await self.AussenhuelleStart(msg)
-        await self.ForschungsmodulStart(msg)
+        await self.ForschungslaborStart(msg)
         await self.KrankenstationStart(msg)
         await self.LagerraumStart(msg)
         await self.MultifunktionStart(msg)
@@ -358,7 +403,7 @@ class Umgebung:
         await self.MesseStart(msg)
         await self.ServerraumStart(msg)
         await self.EnergiespeicherStart(msg)
-        await self.KuehlmodulStart(msg)
+        await self.KuehlhausStart(msg)
         await self.LufttankStart(msg)
         await self.BrennstofflagerStart(msg)
         await self.SolarsteuerungStart(msg)
@@ -368,6 +413,7 @@ class Umgebung:
         await self.AnzeigeStatus(msg)
         if (self.Werte['Energie'] < 0) or (self.Werte['Luft'] < 0) or (self.Werte['Nahrung'] < 0) or (self.Werte['Brennstoff'] < 0):
                  await self.schreibeNachricht(msg,f'Die Resourcen sind zuende gegangen!')
+                 await self.schreibeSystemnachricht(msg, 'Die Resourcen sind zuende gegangen!')
 
     async def Teilnehmen(self, msg):
         if msg.channel.name != 'start-portal':
@@ -549,17 +595,26 @@ class Umgebung:
             return None
         except:
             return None
-
-    async def testBefehl(self, msg):
-        server = msg.guild
   
     async def Hilfe(self, msg):
+        text = 'Wert \n' 
+        text += 'ZugEnde \n' 
+        text += '<Station>Start \n'
+        if self.parameter(msg,1) != 'Admin':
+          text = ''
         await self.schreibeNachricht(msg, '*Systemüberblick*  \n' +
-        'Wert \n'+
         'Bewegen <Raum> \n'+
         'AnzeigeStatus \n'+
+        'Anzeige <Station>\n'+
+        'Energie <Stations> <Wert>\n'+
         '<Station>Energie <Wert>\n'+
-        '<Station>Anzeige \n'
+        '<Station>Anzeige \n'+
+        '<Station>Verhaeltnis <Wert>\n' +
+        'Modulliste\n' +
+        'ModulSchalten <Modul> [!]\n' +
+        'Konsole <Name> <Text>\n' +
+        'KonsoleHack <Name>\n' +
+        text
         )
 
     async def Modulliste(self, msg):
