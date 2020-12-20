@@ -3,8 +3,11 @@ import ast
 import csv
 import json
 import sys
+import os.path
+from os import path
 
 class Umgebung:
+    client = None
     async def fehler(self, msg):
         await self.schreibeNachricht(msg, "Unbekanntes Kommando.")
         pass
@@ -15,6 +18,8 @@ class Umgebung:
             eingaben = msg.content.split(' ')
             if msg.channel.name == 'start-portal' and eingaben[0] != 'Teilnehmen':
                 return
+            if eingaben[0] == '#':
+                return
             if eingaben[0] in dir(Umgebung):
                 return await getattr(self, eingaben[0], lambda fehler: "unbekannt")(msg)
             else:
@@ -23,22 +28,35 @@ class Umgebung:
             print('Channel '+msg.channel.name+' ignoriert')
 
     def __init__(self):
-        self.LadeStartWerte()
-        print('Startwerte gelesen')
-        print(self.Werte)
+        pass
 
     # Laed Werte aus einer gespeicherten Session
-    def LadeWerte(self, msg):
+    async def LadeWerte(self, msg, init=False):
         self.Werte = []
-        with open(self.parameter(msg, 1), 'r') as json_file:
-            self.Werte = json.load(json_file)
+        name = self.parameter(msg, 1)
+        if name == 'Fehler' and not init:
+          await self.LadeStartWerte(msg)
+          return
+        else:
+          name = 'Erwachen'
+        try:
+          with open(name+'.sav', 'r') as json_file:
+              self.Werte = json.load(json_file)
+          if msg is not None: 
+            await self.schreibeSystemnachricht(msg, f'Werte aus {name} wurden geladen.')
+        except:
+          if msg is not None:
+            await self.schreibeSystemnachricht(msg, f'Laden fehlgeschlagen: {msg.content}')
 
-    def SchreibeWerte(self, msg):
-        with open(self.parameter(msg, 1), 'w') as json_file:
+    async def SchreibeWerte(self, msg, name=None):
+        if name is None:
+          name = self.parameter(msg, 1)
+        with open(name+'.sav', 'w') as json_file:
             json.dump(self.Werte, json_file)
+        await self.schreibeSystemnachricht(msg, f'Werte wurden als {name} gesichert.')
 
     # laed die CSV Datei mit den Startwerten
-    def LadeStartWerte(self, msg=None):
+    async def LadeStartWerte(self, msg=None):
         self.Werte = []
         with open('Initialwerte.csv', 'r') as datei:
             reader = csv.reader(datei, delimiter = ',')
@@ -48,16 +66,29 @@ class Umgebung:
             self.Werte[wert] = float(self.Werte[wert])
           except: 
             # Textwerte, keine Aktion
-            text = 1
+            pass
         self.Werte['Klick'] = 0
-
+        if msg is not None:
+          await self.schreibeSystemnachricht(msg, 'Startwerte geladen.')
+        else:
+          if path.exists('Erwachen.sav'):
+            await self.LadeWerte(msg, True)
+            print('Gespeichertes Spiel geladen.')
+          else:
+            print('Startwerte gelesen')
+          print(self.Werte)
+          print ('Setze mit Klick '+str(self.Werte['Klick'])+' fort.')
+        
     #
     def parameter(self, msg, nr=9999):
-        eingaben = msg.content.split(' ')
-        if len(eingaben)-1 < nr:
-            return 'Fehler'
-        else:
-            return eingaben[nr].strip()
+        try:
+          eingaben = msg.content.split(' ')
+          if len(eingaben)-1 < nr:
+              return 'Fehler'
+          else:
+              return eingaben[nr].strip()
+        except:
+          return 'Fehler'
 
     # Wert mit Überprüfung setzen
     async def setzeWert(self, msg, wertname=None, wert='', pruefwertname='', div=1):
@@ -104,14 +135,14 @@ class Umgebung:
     async def Anzeige(self, msg, bezeichnung=None, text=None, add=None):
         if bezeichnung is None:
           bezeichnung = self.parameter(msg, 1) 
-        if bezeichnung is None or bezeichnung == 'Fehler':
+        if bezeichnung == 'Fehler':
           await self.schreibeNachricht(msg, 'Unbekannter Befehl.')
           return
         # prüfe ob eine Übersetzung vorhanden ist 
         try:
             text = self.Werte['Text_'+bezeichnung]
         except:
-            pass
+            text = bezeichnung
         if bezeichnung == 'Status':
           await self.AnzeigeStatus(msg)
           return
@@ -156,6 +187,9 @@ class Umgebung:
               text = 'zwangsweise '
             await self.schreibeNachricht(msg, f'Modul {modul} {text}abgeschaltet.')            
             await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} {text}ausgeschaltet.')
+            # Luft ablassen  
+            if len(dest.members) > 0:
+              await self.Ton(msg, modul, 'Druckluftzischen.mp3')
           else:
             # einschalten
             await self.schreibeNachricht(msg, f'Modul {modul} eingeschaltet.')
@@ -419,6 +453,9 @@ class Umgebung:
         if msg.channel.name != 'start-portal':
             await self.schreibeNachricht(msg,'***System Error*** Erwachung ohne Schlaf')
             return
+        # prüfen ob Aufwachraum aktiviert ist!
+        # TODO
+
         # prüfen ob channel schon da ist
         name = self.parameter(msg, 1).strip().lower()
         # channel erzeugen
@@ -447,7 +484,11 @@ class Umgebung:
             # entferne die Teilnahme-Nachricht
             await msg.delete()
             await self.schreibeSystemnachricht(msg, f'{msg.author.name} betritt als {msg.author.nick} das System')
-            
+            # Spieler für Aufwachraum berechtigen 
+            # TODO
+            # Spieler in den Aufwachraum bewegen
+            # TODO
+ 
     async def Bewegen(self, msg):
         try:
           ch = msg.author.voice.channel
@@ -508,7 +549,8 @@ class Umgebung:
                   await self.schreibeNachricht(msg, 'Fehler beim Sprachkanal')
                 await msg.author.move_to(dest, reason='betritt den Raum')
                 if len(dest.members) > 3:
-                  await self.schreibeNachricht(msg, 'Überfüllung! Luftqualität prüfen.')                
+                  await self.schreibeNachricht(msg, 'Überfüllung! Luftqualität prüfen.')
+                  await self.schreibeSystemnachricht(msg, f'*Critical* Überfüllung in {dest.name}: {len(dest.members)}')
             else:
                 await self.schreibeNachricht(msg, 'Modul unbekannt oder deaktiviert.')
         except KeyError:
@@ -595,14 +637,36 @@ class Umgebung:
             return None
         except:
             return None
-  
+
+    async def Hinweis(self, msg):
+      channel = self.parameter(msg, 1)
+      art = self.parameter(msg, 2)
+      try:
+        ton = self.Werte['Hinweis_'+art]
+        await self.schreibeSystemnachricht(msg, f'Hinweis in {channel}: {art}')
+        await self.Ton(msg, channel, ton)
+      except:
+        await self.schreibeNachricht(msg, '*Critical Error* Hinweis nicht bekannt.')
+
+    async def Alarm(self, msg):
+      channel = self.parameter(msg, 1)
+      await self.schreibeSystemnachricht(msg, f'Alarm in {channel}')
+      await self.Ton(msg, self.parameter(msg, 1), 'redalert.mp3')
+
     async def Hilfe(self, msg):
         text = 'Wert \n' 
-        text += 'ZugEnde \n' 
+        text += 'ZugEnde \n'
+        text += 'Shutdown \n'
+        text += 'LadeWerte <file> (ohne Parameter werden die Initialwerte geladen)\n'
+        text += 'SchreibeWerte <file> (Achtung: Überschreibt ohne Warnung)\n' 
         text += '<Station>Start \n'
+        text += 'Alarm <Station>\n'
+        text += 'Hinweisliste\n'
+        text += 'Hinweis <Station> <Art>\n'
         if self.parameter(msg,1) != 'Admin':
           text = ''
         await self.schreibeNachricht(msg, '*Systemüberblick*  \n' +
+        '# <Notiz>\n' + 
         'Bewegen <Raum> \n'+
         'AnzeigeStatus \n'+
         'Anzeige <Station>\n'+
@@ -617,6 +681,10 @@ class Umgebung:
         text
         )
 
+    async def Shutdown(self,msg):
+       await self.SchreibeWerte(msg, 'Erwachen')
+       await self.client.logout()
+
     async def Modulliste(self, msg):
        text = '***Module***'
        for w in list(self.Werte):
@@ -626,3 +694,20 @@ class Umgebung:
            if self.Werte[w] == 1:
              text += ' *(active)*'
        await self.schreibeNachricht(msg, text)
+
+    async def Hinweisliste(self, msg):
+       text = '***Hinweise***'
+       for w in list(self.Werte):
+         if w.startswith('Hinweis_'):
+           name = w[8:]
+           text += f'\n{name}'
+       await self.schreibeNachricht(msg, text)
+    
+    async def Ton(self, msg, channel=None, ton=None):
+        dest = discord.utils.find(lambda m: m.name==channel and m.category.name=='Orte', msg.guild.voice_channels)
+        if dest is not None: 
+           # Ton nur abspielen wenn jemand anwesend ist 
+           if len(dest.members) > 0: 
+             voice = await dest.connect()
+             voice.play(discord.FFmpegPCMAudio(ton))
+           
