@@ -123,3 +123,17 @@ Energieanteil_Aquatorium_Lufterzeugung,0.6
 Energieanteil_Biotop_Lufterzeugung,0.4
 Energieanteil_Aquatorium_Lufterzeugung_max,1
 Energieanteil_Biotop_Lufterzeugung_max,1
+Hinweis_Alarm,alert.wav
+Hinweis_Sirene,Alarmsirene.mp3
+Hinweis_Einschalten,Energiean.wav
+Hinweis_Ausschalten,Energieaus.wav
+Hinweis_Druckabfall,Druckluftzischen.mp3
+Hinweis_Verweigert,access_denied.wav
+Hinweis_Warnung,warning.wav
+Hinweis_Unmoeglich,unable2comply.wav
+Hinweis_Processing,processingstandby.wav
+Hinweis_Systemton,sound_20.wav
+Hinweis_Anklopfen,sound_22.wav
+Hinweis_Offline,finalwarnungenergyoffline.wav
+Hinweis_Gefahr,danger.wav
+Hinweis_Diagnose,diagnosticcylclecomplete.wav
