@@ -123,17 +123,32 @@ Energieanteil_Aquatorium_Lufterzeugung,0.6
 Energieanteil_Biotop_Lufterzeugung,0.4
 Energieanteil_Aquatorium_Lufterzeugung_max,1
 Energieanteil_Biotop_Lufterzeugung_max,1
-Hinweis_Alarm,alert.wav
-Hinweis_Sirene,Alarmsirene.mp3
-Hinweis_Einschalten,Energiean.wav
-Hinweis_Ausschalten,Energieaus.wav
-Hinweis_Druckabfall,Druckluftzischen.mp3
-Hinweis_Verweigert,access_denied.wav
-Hinweis_Warnung,warning.wav
-Hinweis_Unmoeglich,unable2comply.wav
-Hinweis_Processing,processingstandby.wav
-Hinweis_Systemton,sound_20.wav
-Hinweis_Anklopfen,sound_22.wav
-Hinweis_Offline,finalwarnungenergyoffline.wav
-Hinweis_Gefahr,danger.wav
-Hinweis_Diagnose,diagnosticcylclecomplete.wav
+Hinweis_Alarm,sound/alert.wav
+Hinweis_Sirene,sound/Alarmsirene.mp3
+Hinweis_Einschalten,sound/Energiean.wav
+Hinweis_Ausschalten,sound/Energieaus.wav
+Hinweis_Druckabfall,sound/Druckluftzischen.mp3
+Hinweis_Verweigert,sound/access_denied.wav
+Hinweis_Warnung,sound/warning.wav
+Hinweis_Unmoeglich,sound/unable2comply.wav
+Hinweis_Processing,sound/processingstandby.wav
+Hinweis_Systemton,sound/sound_20.wav
+Hinweis_Anklopfen,sound/sound_22.wav
+Hinweis_Offline,sound/finalwarnungenergyoffline.wav
+Hinweis_Gefahr,sound/danger.wav
+Hinweis_Diagnose,sound/diagnosticcylclecomplete.wav
+Rolle_Aquatorium,Nicht vergeben
+Rolle_Counselor,Nicht vergeben
+Rolle_Informatik,Nicht vergeben
+Rolle_Ingenieur,Nicht vergeben
+Rolle_Biologie,Nicht vergeben
+Rolle_Recycling,Nicht vergeben
+Rolle_Kommandant,Nicht vergeben
+Rolle_Facility,Nicht vergeben
+Rolle_Technik,Nicht vergeben
+Rolle_Kollaborateur,Nicht vergeben
+Kategorie_Konsole,Konsolen
+Kategorie_Orte,Orte
+Kanal_Start,start-portal
+Kanal_System,system
+Kanal_Konsole,konsole-
