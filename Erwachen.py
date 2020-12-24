@@ -3,6 +3,9 @@ import ast
 import csv
 import json
 import sys
+import pathlib
+import datetime
+import os
 import os.path
 from os import path
 
@@ -10,11 +13,11 @@ class Umgebung:
     client = None
     async def fehler(self, msg):
         await self.schreibeNachricht(msg, "Unbekanntes Kommando.")
-        pass
+        await self.schreibeSystemnachricht(msg, f'**Syntax Error**: {msg.author.nick} durch Kommando {msg.content}')
 
     async def befehl(self, msg):
         # nur in Spielchannels reagieren
-        if msg.channel.name == 'start-portal' or msg.channel.name.startswith('konsole-'):
+        if msg.channel.name == self.Werte['Kanal_Start'] or msg.channel.name.startswith(self.Werte['Kanal_Konsole']):
             eingaben = msg.content.split(' ')
             if msg.channel.name == 'start-portal' and eingaben[0] != 'Teilnehmen':
                 return
@@ -39,19 +42,23 @@ class Umgebung:
           return
         else:
           name = 'Erwachen'
-        try:
-          with open(name+'.sav', 'r') as json_file:
+        try:          
+          with open('save/'+name+'.sav', 'r') as json_file:
               self.Werte = json.load(json_file)
           if msg is not None: 
-            await self.schreibeSystemnachricht(msg, f'Werte aus {name} wurden geladen.')
+            fname = pathlib.Path(name+'.sav')
+            await self.schreibeSystemnachricht(msg, f'Werte aus {name} wurden geladen.\n' + 
+              'Systemstand Klick '+str(self.Werte['Klick'])+' vom '+str(datetime.datetime.fromtimestamp(fname.stat().st_mtime)))
         except:
           if msg is not None:
-            await self.schreibeSystemnachricht(msg, f'Laden fehlgeschlagen: {msg.content}')
+            await self.schreibeSystemnachricht(msg, f'Laden fehlgeschlagen: {msg.content}')    
 
     async def SchreibeWerte(self, msg, name=None):
         if name is None:
           name = self.parameter(msg, 1)
-        with open(name+'.sav', 'w') as json_file:
+        if not path.exists('save'):
+            os.mkdir('save')  
+        with open('save/'+name+'.sav', 'w') as json_file:
             json.dump(self.Werte, json_file)
         await self.schreibeSystemnachricht(msg, f'Werte wurden als {name} gesichert.')
 
@@ -71,7 +78,7 @@ class Umgebung:
         if msg is not None:
           await self.schreibeSystemnachricht(msg, 'Startwerte geladen.')
         else:
-          if path.exists('Erwachen.sav'):
+          if path.exists('save/Erwachen.sav'):
             await self.LadeWerte(msg, True)
             print('Gespeichertes Spiel geladen.')
           else:
@@ -118,13 +125,13 @@ class Umgebung:
     async def Wert(self, msg):
         par = self.parameter(msg, 2)
         name = self.parameter(msg, 1)
-        if name == 'Fehler':
-            await fehler(msg)
-        else:
+        try:
             if par == 'Fehler':
                 await self.schreibeNachricht(msg,name+'= '+str(self.Werte[name]))
             else:
                 await self.setzeWert(msg, name, par)
+        except:
+            await self.fehler(msg)
 
     async def aendereWert(self, msg, bezeichnung=None, Art='Energieverbrauch', div=1):
         await self.setzeWert(msg, f'{Art}_{bezeichnung}', self.parameter(msg,1), f'{Art}_{bezeichnung}_max', div)
@@ -162,6 +169,7 @@ class Umgebung:
           await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} von ausserhalb') 
 
     async def ModulSchalten(self, msg):
+        # umschalten eines Moduls. Schalten funktioniert nur wenn man im gleichnamigen Modul ist
         modul = self.parameter(msg, 1)
         override = self.parameter(msg, 2)
         if modul == 'Fehler':
@@ -169,13 +177,13 @@ class Umgebung:
           return
         try:
           ch = self.getOrtChannel(msg).name
-          if ch != 'Kommandoraum':
+          if ch != modul:
             await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt.')
             await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} aus {ch}') 
             return
           if self.Werte['Modul_'+modul] == 1:
             # ausschalten
-            dest = discord.utils.find(lambda m: m.name==modul and m.category.name=='Orte', msg.guild.voice_channels)
+            dest = discord.utils.find(lambda m: m.name==modul and m.category.name==self.Werte['Kategorie_Orte'], msg.guild.voice_channels)
             if dest is not None:
               if override == 'Fehler' and (len(dest.members) > 0):
                 await self.schreibeNachricht(msg, 'Es befinden sich noch Personen im Modul. Override notwendig.')
@@ -201,15 +209,6 @@ class Umgebung:
 
 
     # Spielbefehle Anzeige / Wertänderung
-    async def KommandosHelp(self, msg):
-        await self.schreibeNachricht(msg,f'***Kommandos:*** \n' +
-                                       'AnzeigeStatus     > Zeige den System-Status an \n' +
-                                       'Bewegen *Ort*      > Gehe in das entsprechende Modul \n' +
-                                       '*Modul*Anzeige    > Anzeige des Modul-Status \n' +
-                                       '*Modul*Energie *Zahl* > Änderung der Modul-Energie \n'       
-                                                        )
-        await self.schreibeSystemnachricht(msg, 'Status von {msg.author.nick} abgerufen')
-
     async def GeneratorraumEnergie(self, msg):
         await self.aendereWert(msg, 'Generatorraum')
 
@@ -420,7 +419,7 @@ class Umgebung:
 
 
     async def ZugEnde(self, msg):
-        await self.schreibeSystemnachricht(msg, '*Processing commands*')
+        await self.schreibeSystemnachricht(msg, '**Processing commands**\nBeende Klick ' + str(self.Werte['Klick']))
         await self.GeneratorraumStart(msg)
         await self.BiotopStart(msg)
         await self.AquatoriumStart(msg)
@@ -442,34 +441,43 @@ class Umgebung:
         await self.BrennstofflagerStart(msg)
         await self.SolarsteuerungStart(msg)
 
-
         self.Werte['Klick'] += 1
         await self.AnzeigeStatus(msg)
         if (self.Werte['Energie'] < 0) or (self.Werte['Luft'] < 0) or (self.Werte['Nahrung'] < 0) or (self.Werte['Brennstoff'] < 0):
-                 await self.schreibeNachricht(msg,f'Die Resourcen sind zuende gegangen!')
-                 await self.schreibeSystemnachricht(msg, 'Die Resourcen sind zuende gegangen!')
+                 await self.schreibeSystemnachricht(msg, '***Die Resourcen sind zuende gegangen!***')
 
     async def Teilnehmen(self, msg):
         if msg.channel.name != 'start-portal':
             await self.schreibeNachricht(msg,'***System Error*** Erwachung ohne Schlaf')
             return
+        name = self.parameter(msg, 1).strip().lower()
+ 
         # prüfen ob Aufwachraum aktiviert ist!
         # TODO
 
+        # prüfen ob User bereits im Spiel ist 
+        for channel in msg.guild.text_channels:
+          if channel.name != self.Werte['Konsole_Start'] and channel.category.name == self.Werte['Kategorie_Konsole'] and channel.name.startswith(self.Werte['Kanal_Konsole']):
+            perm = channel.overwrites_for(msg.author)
+            print (perm)
+            if perm.send_messages or perm.read_messages:
+              await self.schreibeNachricht(msg, f'{channel.name} bereits vorhanden, bitte dort weiterspielen.')
+              await self.schreibeSystemnachricht(msg,f'Versuch der Persönlichkeitsspaltung durch {msg.author} mit Name {name}')
+              return
         # prüfen ob channel schon da ist
-        name = self.parameter(msg, 1).strip().lower()
+ 
         # channel erzeugen
-        channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name)
+        channel = discord.utils.get(msg.guild.text_channels, name=self.Werte['Kanal_Konsole']+name)
         if channel is not None:
             await self.schreibeNachricht(msg, 'Zugriff für diesen Namen verweigert. Wähle einen anderen.')
         else:
-            category = discord.utils.find(lambda m: m.name=='Konsolen', msg.guild.categories)
+            category = discord.utils.find(lambda m: m.name==self.Werte['Kategorie_Konsole'], msg.guild.categories)
             overwrites = {
                     msg.author: discord.PermissionOverwrite(send_messages=True, read_messages=True),
                     msg.guild.default_role: discord.PermissionOverwrite(send_messages=False, read_messages=False),
                     msg.guild.me: discord.PermissionOverwrite(send_messages=True, read_messages=True)
                     }
-            dest = await msg.guild.create_text_channel(f'konsole-{name}', overwrites=overwrites, category=category)
+            dest = await msg.guild.create_text_channel(self.Werte['Kanal_Konsole']+name, overwrites=overwrites, category=category)
             await dest.send(f'Willkommen {name}. Wünsche wohl geruht zu haben.')
             # nickname ändern - funktioniert nur bei normalen Benutzern, nicht bei Admins!
             try:
@@ -478,7 +486,7 @@ class Umgebung:
             except:
                 await self.schreibeNachricht(msg, f'Nickname des priviligierten Accounts konnte nicht geändert werden.')
             perms = msg.channel.overwrites_for(msg.author)
-            perms.write_messages=False
+            perms.send_messages=False
             perms.read_messages=False
             await msg.channel.set_permissions(msg.author, overwrite=perms, reason="Teilnehmen-Command")
             # entferne die Teilnahme-Nachricht
@@ -497,7 +505,7 @@ class Umgebung:
         except:
              await self.schreibeNachricht(msg, 'Bewegen ohne Sprachverbindung ist nicht möglich. Bitte erst verbinden.')
              return
-        if ch.category.name != 'Orte':
+        if ch.category.name != self.Werte['Kategorie_Orte']:
             await self.schreibeNachricht(msg,' Bewegen nur mit Sprachverbindung in einem Ort möglich.')
             return
         server = msg.guild
@@ -509,14 +517,14 @@ class Umgebung:
         # Bewegung nur in bekannte und aktivierte Module
         try:
             if self.Werte['Modul_'+channel] == 1:
-                dest = discord.utils.find(lambda m: m.name==channel and m.category.name=='Orte', server.voice_channels)
+                dest = discord.utils.find(lambda m: m.name==channel and m.category.name==self.Werte['Kategorie_Orte'], server.voice_channels)
                 text = ''
                 overwrites = {
                             msg.author: discord.PermissionOverwrite(connect=True, speak=True, view_channel=True),
                             }
                 if dest is None:
                     name = msg.author.nick
-                    category = discord.utils.find(lambda m: m.name=='Orte', server.categories)
+                    category = discord.utils.find(lambda m: m.name==self.Werte['Kategorie_Orte'], server.categories)
                     dest = await server.create_voice_channel(channel, overwrites=overwrites, category=category)
                     text = 'als erster '
                 else:
@@ -529,7 +537,7 @@ class Umgebung:
                   if msg.author.voice is not None:
                     ch = msg.author.voice.channel
                     if ch is not None:
-                      if ch.category.name=='Orte':
+                      if ch.category.name==self.Werte['Kategorie_Orte']:
                         await self.schreibeNachricht(msg, f'{msg.author.nick} verlässt {msg.author.voice.channel} und betritt {text}{channel}')
                         perms = msg.author.voice.channel.overwrites_for(msg.author)
                         perms.connect=False
@@ -560,7 +568,7 @@ class Umgebung:
         name = self.parameter(msg, 1)
         text = self.parameter(msg, 2)
         if name != 'Fehler' and text != 'Fehler':
-            channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name)
+            channel = discord.utils.get(msg.guild.text_channels, name=self.Werte['Kanal_Konsole']+name)
             if channel is None:
               await self.schreibeNachricht(msg, 'Unbekannte Konsole')
               return
@@ -570,23 +578,48 @@ class Umgebung:
         else:
             await self.schreibeNachricht(msg, 'Unbekannte Konsole')
 
-    async def KonsoleHack(self, msg):
+    async def KonsoleLog(self, msg):
         name = self.parameter(msg, 1)
         anz = self.parameter(msg, 2)
         if not anz.isnumeric():
           anz = 2
+        else:
+          anz = int(anz)
         if name != 'Fehler':
-            channel = discord.utils.get(msg.guild.text_channels, name='konsole-'+name)
+            channel = discord.utils.get(msg.guild.text_channels, name=self.Werte['Kanal_Konsole']+name)
             if channel is None:
               await self.schreibeNachricht(msg, 'Unbekannte Konsole')
               return
-            text = f'***Hack Konsole {name}: ***\n'
+            text = f'***Konsolenlog {name}: ***\n'
             async for message in channel.history(limit=anz):
               text += message.content + '\n'             
             await self.schreibeNachricht(msg,text)
         else:
             await self.schreibeNachricht(msg, 'Unbekannte Konsole')
-        await self.schreibeSystemnachricht(msg, f'Hack Anz={anz} auf Konsole {name} durch {msg.author.nick}')
+        await self.schreibeSystemnachricht(msg, f'Log von Konsole {name} Anz={anz} durch {msg.author.nick}')
+
+    async def Posten(self, msg):
+        name = self.parameter(msg, 1)
+        art = self.parameter(msg, 2)
+        try:
+          if art == '-':
+            if self.Werte['Rolle_'+name] != msg.author.nick:
+              await self.schreibeNachricht(msg, 'Posten {name} nicht zugeordnet.')
+            else:
+              self.Werte['Rolle_'+name] = f'Nicht vergeben, zuletzt {msg.author.nick}'
+              await self.schreibeNachricht(msg, f'Posten {name} abgelegt.')
+              await self.schreibeSystemnachricht(msg, f'{msg.author.nick} hat Posten {name} abgelegt.')
+          if art == '+':
+            if self.Werte['Rolle_'+name].startswith('Nicht vergeben'):
+              self.Werte['Rolle_'+name] = msg.author.nick
+              await self.schreibeNachricht(msg, f'Posten {name} angenommen.')
+              await self.schreibeSystemnachricht(msg, f'{msg.author.nick} hat Posten {name} angenommen.')
+            else:
+              await self.schreibeNachricht(msg, f'Posten {name} bereits an '+self.Werte['Rolle_'+name]+' vergeben.')
+          if art != '+' and art != '-':
+            await self.schreibeNachricht(msg, f'Posten {name}: '+self.Werte['Rolle_'+name])
+        except:
+          await self.fehler(msg)
 
     #Hilfsfunktionen für discord
 
@@ -600,23 +633,25 @@ class Umgebung:
                await msg.channel.send(msg.channel, picture)
 
     async def schreibeSystemnachricht(self, msg, text=None):
-        print (f'Systemnachricht {text}')
         if text is None:
           return
-        channel = discord.utils.get(msg.guild.text_channels, name='konsole-system')
+        # vermeiden dass Nachrichten auf der Systemkonsole doppelt kommentiert werden
+        if msg.channel.name == self.Werte['Kanal_Konsole']+self.Werte['Kanal_System']:
+          return
+        channel = discord.utils.get(msg.guild.text_channels, name=self.Werte['Kanal_Konsole']+self.Werte['Kanal_System'])
         if channel is None:
-            category = discord.utils.find(lambda m: m.name=='Konsolen', msg.guild.categories)
+            category = discord.utils.find(lambda m: m.name==self.Werte['Kategorie_Konsole'], msg.guild.categories)
             overwrites = {
                     msg.guild.default_role: discord.PermissionOverwrite(send_messages=False, read_messages=False),
                     msg.guild.me: discord.PermissionOverwrite(send_messages=True, read_messages=True)
                     }
-            channel = await msg.guild.create_text_channel(f'konsole-system', overwrites=overwrites, category=category)
+            channel = await msg.guild.create_text_channel(self.Werte['Kanal_Konsole']+self.Werte['Kanal_System'], overwrites=overwrites, category=category)
             await channel.send('***Systeminitialisierung*** Bootvorgang erfolgreich.')
         await channel.send(text)
 
     async def loggeLoeschen(self, msg, channel=None):
         if msg is not None:
-          if msg.channel.name.startswith('konsole-'):
+          if msg.channel.name.startswith(self.Werte['Kanal_Konsole']):
             if msg.author.nick == None:
               #await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde gelöscht.')
               await self.schreibeSystemnachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde in {msg.channel.name} gelöscht.')
@@ -624,15 +659,15 @@ class Umgebung:
               #await self.schreibeNachricht(msg, f'Eine Nachricht von User {msg.author.nick} wurde gelöscht.')
               await self.schreibeSystemnachricht(msg, f'Eine Nachricht von User {msg.author.name} wurde in {msg.channel.name} gelöscht.')
         else:
-          if channel.name.startswith('konsole-'):
-            syschannel = discord.utils.get(channel.guild.text_channels, name='konsole-system')
+          if channel.name.startswith(self.Werte['Kanal_Konsole']):
+            syschannel = discord.utils.get(channel.guild.text_channels, name=self.Werte['Kanal_Konsole']+self.Werte['Kanal_System'])
             await syschannel.send(f'Eine ältere Nachricht in {channel.name} wurde gelöscht.')
 
     def getOrtChannel(self, msg):
         try:
             if msg.author.voice is not None:
                 ch = msg.author.voice.channel
-                if ch.category.name=='Orte':
+                if ch.category.name==self.Werte['Kategorie_Orte']:
                     return ch
             return None
         except:
@@ -651,39 +686,49 @@ class Umgebung:
     async def Alarm(self, msg):
       channel = self.parameter(msg, 1)
       await self.schreibeSystemnachricht(msg, f'Alarm in {channel}')
-      await self.Ton(msg, self.parameter(msg, 1), 'redalert.mp3')
+      await self.Ton(msg, self.parameter(msg, 1), self.Werte['Hinweis_Alarm'])
 
     async def Hilfe(self, msg):
-        text = 'Wert \n' 
-        text += 'ZugEnde \n'
-        text += 'Shutdown \n'
-        text += 'LadeWerte <file> (ohne Parameter werden die Initialwerte geladen)\n'
+        text = 'Wert <Wertname> [Wert] - Wert anzeigen oder setzen\n' 
+        text += 'ZugEnde - nächsten Zug einleiten\n'
+        text += 'Shutdown - Speichern und Bot beenden\n'
+        text += 'LadeWerte [<file>] (ohne Parameter werden die Initialwerte geladen)\n'
         text += 'SchreibeWerte <file> (Achtung: Überschreibt ohne Warnung)\n' 
-        text += '<Station>Start \n'
-        text += 'Alarm <Station>\n'
-        text += 'Hinweisliste\n'
-        text += 'Hinweis <Station> <Art>\n'
+        text += '<Modul>Start - einzelnes Modul berechnen\n'
+        text += 'Alarm <Modul>\n'
+        text += 'Hinweisliste - Hinweise für Module auflisten\n'
+        text += 'Hinweis <Modul> <Art> - Hinweis in Modul abspielen\n'
         if self.parameter(msg,1) != 'Admin':
           text = ''
-        await self.schreibeNachricht(msg, '*Systemüberblick*  \n' +
-        '# <Notiz>\n' + 
-        'Bewegen <Raum> \n'+
+        await self.schreibeNachricht(msg, '***Systemüberblick***  \n' +
+        '# <Notiz> - Merker für eigenen Notizen, vom System ignoriert\n' + 
+        'Bewegen <Modul> \n'+
         'AnzeigeStatus \n'+
-        'Anzeige <Station>\n'+
-        'Energie <Stations> <Wert>\n'+
-        '<Station>Energie <Wert>\n'+
-        '<Station>Anzeige \n'+
-        '<Station>Verhaeltnis <Wert>\n' +
+        'Anzeige <Modul>\n'+
+        'Energie <Modul> <Wert>\n'+
+        '<Modul>Energie <Wert>\n'+
+        '<Modul>Anzeige \n'+
+        '<Modul>Verhaeltnis <Wert>\n' +
+        'Postenliste\n' +
+        'Posten <Posten> +/-\n' +
         'Modulliste\n' +
         'ModulSchalten <Modul> [!]\n' +
-        'Konsole <Name> <Text>\n' +
-        'KonsoleHack <Name>\n' +
+        'Konsole <Name> <Text> - Text auf Konsole ausgeben\n' +
+        'KonsoleLog <Name> [Anzahl] \n' +
         text
         )
 
     async def Shutdown(self,msg):
        await self.SchreibeWerte(msg, 'Erwachen')
        await self.client.logout()
+
+    async def Postenliste(self, msg):
+       text = '***Posten***'
+       for w in list(self.Werte):
+         if w.startswith('Rolle_'):
+           name = w[6:]
+           text += f'\n{name} - {self.Werte[w]}'
+       await self.schreibeNachricht(msg, text)
 
     async def Modulliste(self, msg):
        text = '***Module***'
@@ -704,10 +749,24 @@ class Umgebung:
        await self.schreibeNachricht(msg, text)
     
     async def Ton(self, msg, channel=None, ton=None):
-        dest = discord.utils.find(lambda m: m.name==channel and m.category.name=='Orte', msg.guild.voice_channels)
+        dest = discord.utils.find(lambda m: m.name==channel and m.category.name==self.Werte['Kategorie_Orte'], msg.guild.voice_channels)
         if dest is not None: 
            # Ton nur abspielen wenn jemand anwesend ist 
            if len(dest.members) > 0: 
              voice = await dest.connect()
              voice.play(discord.FFmpegPCMAudio(ton))
            
+    async def Berechtigung(self, msg, modul=None):
+        # prüft Berechtigung für bestimmte Modul in Abhängigkeit vom Ort und der Rolle 
+        ch = self.getOrtChannel(msg)            
+        rollen = list()
+        for w in list(self.Werte):
+          if w.startswith('Rolle_') and self.Werte[w] == msg.author.nick:
+            rollen.append(w[6:])
+        
+        # Mögliche Berechtigungen:
+        # Rolle darf Befehl immer ausführen 
+        # Rolle darf Befehl in bestimmten Modul ausführen
+        # Befehl darf in bestimmten Modul ausgeführt werden (keine rollenabhängigkeit)
+        # Befehl darf immer und überall ausgeführt werden 
+
