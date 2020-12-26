@@ -23,6 +23,8 @@ class Umgebung:
                 return
             if eingaben[0] == '#':
                 return
+            if not await self.Berechtigung(msg):
+                return
             if eingaben[0] in dir(Umgebung):
                 return await getattr(self, eingaben[0], lambda fehler: "unbekannt")(msg)
             else:
@@ -98,25 +100,26 @@ class Umgebung:
           return 'Fehler'
 
     # Wert mit Überprüfung setzen
-    async def setzeWert(self, msg, wertname=None, wert='', pruefwertname='', div=1):
-        if not wert.isnumeric():
-            await self.schreibeNachricht(msg,f'Der Wert "{wert}" ist ungültig. Kommando nicht ausführbar.')
-            return(False)
-        ch = self.getOrtChannel(msg).name
-        if wertname.find('_'+ch) == -1:   
-             await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt')
-             await self.schreibeSystemnachricht(msg, f'Manipulationsversuch von {msg.author.nick} auf {wertname} von ausserhalb') 
-             return
-        wert = float(wert)/div
-        pruefwert = 9999
-        if not pruefwertname.isnumeric():
-          if pruefwertname != '':
-            pruefwert = self.Werte[pruefwertname]
-        else:
-          pruefwert = pruefwertname
-        if (wert > pruefwert) or (wert < 0):
-                await self.schreibeNachricht(msg,f'Der Wert {wert} ist nicht erlaubt. Kommando nicht ausführbar.')
-                return(False)
+    async def setzeWert(self, msg, wertname=None, wert='', pruefwertname='', div=1, num=True):
+        if num:
+          if not wert.isnumeric():
+              await self.schreibeNachricht(msg,f'Der Wert "{wert}" ist ungültig. Kommando nicht ausführbar.')
+              return(False)
+          ch = self.getOrtChannel(msg).name
+          if wertname.find('_'+ch) == -1:   
+               await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt')
+               await self.schreibeSystemnachricht(msg, f'Manipulationsversuch von {msg.author.nick} auf {wertname} von ausserhalb') 
+               return
+          wert = float(wert)/div
+          pruefwert = 9999
+          if not pruefwertname.isnumeric():
+            if pruefwertname != '':
+              pruefwert = self.Werte[pruefwertname]
+          else:
+            pruefwert = pruefwertname
+          if (wert > pruefwert) or (wert < 0):
+                  await self.schreibeNachricht(msg,f'Der Wert {wert} ist nicht erlaubt. Kommando nicht ausführbar.')
+                  return(False)
         self.Werte[wertname] = wert
         await self.schreibeNachricht(msg,f'Der Wert {wert} wurde gesetzt. ')
         await self.schreibeSystemnachricht(msg, f'{wertname} geändert von {msg.author.nick} in {self.getOrtChannel(msg)} auf {wert}')
@@ -129,7 +132,7 @@ class Umgebung:
             if par == 'Fehler':
                 await self.schreibeNachricht(msg,name+'= '+str(self.Werte[name]))
             else:
-                await self.setzeWert(msg, name, par)
+                await self.setzeWert(msg=msg, wertname=name, wert=par, num=par.isnumeric())
         except:
             await self.fehler(msg)
 
@@ -190,7 +193,6 @@ class Umgebung:
                 return
             self.Werte['Modul_'+modul] = 0
             text = ''
-            print (override)
             if override == '!':
               text = 'zwangsweise '
             await self.schreibeNachricht(msg, f'Modul {modul} {text}abgeschaltet.')            
@@ -353,11 +355,14 @@ class Umgebung:
         self.Werte['Nahrung']       += self.Werte['Energieverbrauch_Biotop'] * (1-self.Werte['Energieanteil_Biotop_Lufterzeugung'])*self.Werte['Techstufe_Biotop']*self.Werte['Nahrungs_Anpassungsfaktor']
         self.Werte['Brennstoff']    -= self.Werte['Energieverbrauch_Biotop'] * (2-self.Werte['Techstufe_Recyclingraum'])
 
-
+    async def StartModul(self, msg):
+        modul = self.parameter(msg, 1)
+        if modul == 'Forschungslabor':
+          self.Werte['Energie'] -= self.Werte['Energieverbrauch_Forschungslabor']*(2-self.Werte['Techstufe_Ingenieur'])
 
     async def ForschungslaborStart(self, msg):
-        self.Werte['Energie'] -= self.Werte['Energieverbrauch_Forschungslabor']*(2-self.Werte['Techstufe_Ingenieur'])
-
+        msg.content = 'StartModul Forschungslabor'
+        await StartModul(self, msg)
 
     async def GeheimlaborStart(self, msg):
         self.Werte['Energie'] -= self.Werte['Energieverbrauch_Geheimlabor']*(2-self.Werte['Techstufe_Kollaborateur'])
@@ -459,7 +464,6 @@ class Umgebung:
         for channel in msg.guild.text_channels:
           if channel.name != self.Werte['Konsole_Start'] and channel.category.name == self.Werte['Kategorie_Konsole'] and channel.name.startswith(self.Werte['Kanal_Konsole']):
             perm = channel.overwrites_for(msg.author)
-            print (perm)
             if perm.send_messages or perm.read_messages:
               await self.schreibeNachricht(msg, f'{channel.name} bereits vorhanden, bitte dort weiterspielen.')
               await self.schreibeSystemnachricht(msg,f'Versuch der Persönlichkeitsspaltung durch {msg.author} mit Name {name}')
@@ -698,6 +702,9 @@ class Umgebung:
         text += 'Alarm <Modul>\n'
         text += 'Hinweisliste - Hinweise für Module auflisten\n'
         text += 'Hinweis <Modul> <Art> - Hinweis in Modul abspielen\n'
+        text += 'Systemnachrichten - Liste vorhandener Standardnachrichten\n'
+        text += 'Systemnachricht <Text|Textname> - Sendet einen Text oder Standardtext an alle Konsolen\n' 
+        text += 'Berechtigungen - Listet alle Berechtigungen auf\n'
         if self.parameter(msg,1) != 'Admin':
           text = ''
         await self.schreibeNachricht(msg, '***Systemüberblick***  \n' +
@@ -741,12 +748,12 @@ class Umgebung:
        await self.schreibeNachricht(msg, text)
 
     async def Hinweisliste(self, msg):
-       text = '***Hinweise***'
-       for w in list(self.Werte):
-         if w.startswith('Hinweis_'):
-           name = w[8:]
-           text += f'\n{name}'
-       await self.schreibeNachricht(msg, text)
+         text = '***Hinweise***'
+         for w in list(self.Werte):
+           if w.startswith('Hinweis_'):
+             name = w[8:]
+             text += f'\n{name}'
+         await self.schreibeNachricht(msg, text)
     
     async def Ton(self, msg, channel=None, ton=None):
         dest = discord.utils.find(lambda m: m.name==channel and m.category.name==self.Werte['Kategorie_Orte'], msg.guild.voice_channels)
@@ -755,18 +762,67 @@ class Umgebung:
            if len(dest.members) > 0: 
              voice = await dest.connect()
              voice.play(discord.FFmpegPCMAudio(ton))
-           
-    async def Berechtigung(self, msg, modul=None):
-        # prüft Berechtigung für bestimmte Modul in Abhängigkeit vom Ort und der Rolle 
-        ch = self.getOrtChannel(msg)            
-        rollen = list()
-        for w in list(self.Werte):
-          if w.startswith('Rolle_') and self.Werte[w] == msg.author.nick:
-            rollen.append(w[6:])
-        
-        # Mögliche Berechtigungen:
-        # Rolle darf Befehl immer ausführen 
-        # Rolle darf Befehl in bestimmten Modul ausführen
-        # Befehl darf in bestimmten Modul ausgeführt werden (keine rollenabhängigkeit)
-        # Befehl darf immer und überall ausgeführt werden 
+       
+    async def Systemnachricht(self, msg):
+      # Nachricht an alle Textkonsolen
+      text = self.parameter(msg, 1)
+      try:
+        # prüfen ob es eine vorgefertigte Systemnachricht ist 
+        text = self.Werte['Systemnachricht_'+text]
+      except:
+        pass
+      for channel in msg.guild.text_channels:
+        if channel.category.name == self.Werte['Kategorie_Konsole']:
+          await channel.send(f'***Important Information***\n{text}')
 
+    async def Systemnachrichten(self, msg):
+      text = '***Systemnachrichtentexte***'
+      for w in list(self.Werte):
+        if w.startswith('Systemnachricht_'):
+          name = w[len('Systemnachricht_'):]
+          text += f'\n{name}: {self.Werte[w]}'
+      await self.schreibeNachricht(msg, text)
+
+    async def Berechtigungen(self, msg):
+      text = '***Berechtigungen***'
+      for w in list(self.Werte):
+        if w.startswith('Berechtigung_'):
+          name = w[len('Berechtigung_'):]
+          text += f'\n{name}: {self.Werte[w]}'
+      await self.schreibeNachricht(msg, text)
+
+    async def Berechtigung(self, msg, befehl=None, modul=None, rolle=None):
+        # prüft Berechtigung für bestimmte Modul in Abhängigkeit vom Ort und der Rolle 
+        # Berechtigung prüfen
+        if self.parameter(msg, 0) == 'Berechtigung':
+          befehl = self.parameter(msg, 1)
+          modul = self.parameter(msg, 2) 
+          rolle = self.parameter(msg, 3)
+        else:
+          modul = self.getOrtChannel(msg)
+          befehl = self.parameter(msg, 0)
+        rollen = list()
+        if rolle is None:
+          for w in list(self.Werte):
+            if w.startswith('Rolle_') and self.Werte[w] == msg.author.nick:
+              rollen.append(w[6:])
+        else:
+          rollen.append(rolle)
+        try:
+          check = self.Werte['Berechtigung_'+befehl]
+          liste = check.split(':')
+          if modul != liste[0] and liste[0] != '*' and 'System' not in rollen:
+            await self.schreibeNachricht(msg, 'No Network access')
+            return False
+          if liste[1] != '*' and liste[1] not in rollen and 'System' not in rollen:
+            await self.schreibeNachricht(msg, 'Access denied.')
+            return False 
+          if self.parameter(msg, 0) == 'Berechtigung':
+            await self.schreibeNachricht(msg, 'Access approved.')
+          return True
+        except:
+          await self.schreibeNachricht(msg, 'Access denied due to error.')
+          return False 
+
+        # Mögliche Berechtigungen:
+        # Befehl:Modul:Rolle
