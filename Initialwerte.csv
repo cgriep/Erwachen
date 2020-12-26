@@ -147,8 +147,32 @@ Rolle_Kommandant,Nicht vergeben
 Rolle_Facility,Nicht vergeben
 Rolle_Technik,Nicht vergeben
 Rolle_Kollaborateur,Nicht vergeben
+Rolle_System,Backup
 Kategorie_Konsole,Konsolen
 Kategorie_Orte,Orte
 Kanal_Start,start-portal
 Kanal_System,system
 Kanal_Konsole,konsole-
+Berechtigung_ZugEnde,*:System
+Berechtigung_Wert,*:System
+Berechtigung_Shutdown,*:System
+Berechtigung_Alarm,*:System
+Berechtigung_Hinweisliste,*:System
+Berechtigung_Hinweis,*:System
+Berechtigung_LadeWerte,*:System
+Berechtigung_SchreibeWerte,*:System
+Berechtigung_LadeStartwerte,*:System
+Berechtigung_Posten,Kommandoraum:*
+Berechtigung_ModulSchalten,*:*
+Berechtigung_Energie,*:*
+Berechtigung_Konsole,Serverraum,*
+Berechtigung_Bewegen,*:*
+Berechtigung_Teilnehmen,*:*
+Berechtigung_Modulliste,*:*
+Berechtigung_Anzeige,*:*
+Berechtigung_KonsoleLog,Geheimlabor:*
+Berechtigung_Postenliste,*:Kommandant
+Berechtigung_AquatoriumVerhaeltnis,Aquatorium:Aquatorium
+Berechtigung_BiotopVerhaeltnis,Biotop:Biologie
+Berechtigung_Hilfe,*:*
+Systemnachricht_1,Startsequenz für Klickübergang initiiert.
