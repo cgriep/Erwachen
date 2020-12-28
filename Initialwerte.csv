@@ -162,17 +162,25 @@ Berechtigung_Hinweis,*:System
 Berechtigung_LadeWerte,*:System
 Berechtigung_SchreibeWerte,*:System
 Berechtigung_LadeStartwerte,*:System
-Berechtigung_Posten,Kommandoraum:*
-Berechtigung_ModulSchalten,*:*
-Berechtigung_Energie,*:*
+Berechtigung_Berechtigungen,*:System
+Berechtigung_Posten,Messe:*
+Berechtigung_ModulSchalten,#:*
+Berechtigung_Energie,#:*
 Berechtigung_Konsole,Serverraum,*
 Berechtigung_Bewegen,*:*
 Berechtigung_Teilnehmen,*:*
-Berechtigung_Modulliste,*:*
-Berechtigung_Anzeige,*:*
+Berechtigung_Modulliste,Multifunktion:*
+Berechtigung_Anzeige,#:*
 Berechtigung_KonsoleLog,Geheimlabor:*
-Berechtigung_Postenliste,*:Kommandant
+Berechtigung_Postenliste,*:Kommandant;Kommandoraum:*
 Berechtigung_AquatoriumVerhaeltnis,Aquatorium:Aquatorium
 Berechtigung_BiotopVerhaeltnis,Biotop:Biologie
 Berechtigung_Hilfe,*:*
+Berechtigung_AnzeigeStatus,Lufttank:*;Kuehlhaus:*;Energiespeicher:*;Brennstofflager:*
+Berechtigung_Postenreset,Forschungslabor:*
+Berechtigung_Lokalisierung,Schlafraum:*
 Systemnachricht_1,Startsequenz für Klickübergang initiiert.
+Systemnachricht_2,Emergency Sequence started.
+Systemnachricht_3,Prepare for evacuation.
+Systemnachricht_4,Shutdown sequence started.
+Systemnachricht_5,Resource level critical.
