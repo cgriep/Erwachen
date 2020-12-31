@@ -69,7 +69,7 @@ Modul_Aussenhuelle,0
 Modul_Biotop,1
 Modul_Brennstofflager,1
 Modul_Energiespeicher,1
-Modul_Forschunglabor,1
+Modul_Forschungslabor,1
 Modul_Geheimlabor,1
 Modul_Geheimlager,0
 Modul_Messe,1
@@ -149,7 +149,7 @@ Rolle_Technik,Nicht vergeben
 Rolle_Kollaborateur,Nicht vergeben
 Rolle_System,Backup
 Kategorie_Konsole,Konsolen
-Kategorie_Orte,Orte
+Kategorie_Orte,Module
 Kanal_Start,start-portal
 Kanal_System,system
 Kanal_Konsole,konsole-
@@ -164,13 +164,13 @@ Berechtigung_SchreibeWerte,*:System
 Berechtigung_LadeStartwerte,*:System
 Berechtigung_Berechtigungen,*:System
 Berechtigung_Posten,Messe:*
-Berechtigung_ModulSchalten,#:*
+Berechtigung_ModulSchalten,#:*;Generatorraum:Ingenieur
 Berechtigung_Energie,#:*
 Berechtigung_Konsole,Serverraum,*
 Berechtigung_Bewegen,*:*
 Berechtigung_Teilnehmen,*:*
 Berechtigung_Modulliste,Multifunktion:*
-Berechtigung_Anzeige,#:*
+Berechtigung_Anzeige,#:*;Status:Kommandant
 Berechtigung_KonsoleLog,Geheimlabor:*
 Berechtigung_Postenliste,*:Kommandant;Kommandoraum:*
 Berechtigung_AquatoriumVerhaeltnis,Aquatorium:Aquatorium
@@ -178,9 +178,12 @@ Berechtigung_BiotopVerhaeltnis,Biotop:Biologie
 Berechtigung_Hilfe,*:*
 Berechtigung_AnzeigeStatus,Lufttank:*;Kuehlhaus:*;Energiespeicher:*;Brennstofflager:*
 Berechtigung_Postenreset,Forschungslabor:*
-Berechtigung_Lokalisierung,Schlafraum:*
+Berechtigung_Lokalisierung,*:Counselor
 Systemnachricht_1,Startsequenz für Klickübergang initiiert.
 Systemnachricht_2,Emergency Sequence started.
 Systemnachricht_3,Prepare for evacuation.
 Systemnachricht_4,Shutdown sequence started.
 Systemnachricht_5,Resource level critical.
+Answer_Information,*Not enough information to fulfile request. Ask for system help if needed*
+Answer_Data,*Data request not clerified. Ask for system help if needed*
+Answer_Daten,*Data request not clerified. Ask for system help if needed*
