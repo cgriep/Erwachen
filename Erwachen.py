@@ -21,8 +21,29 @@ class Umgebung:
             eingaben = msg.content.split(' ')
             if msg.channel.name == 'start-portal' and eingaben[0] != 'Teilnehmen':
                 return
+            if '?' in msg.content:
+              await self.schreibeNachricht(msg,'*Ask for system help if needed*') 
+              return
             if eingaben[0] == '#':
                 return
+            for answer in self.Werte:
+              if answer.startswith('Answer_'):
+                text = answer[7:]
+                print (text)
+                if text.lower() in msg.content.lower():
+                  await self.schreibeNachricht(msg,self.Werte[answer]) 
+                  return
+            # wurde ein Spielername verwendet ?
+            if not eingaben[0].startswith('Konsole'):
+              for name in eingaben:
+                print (name)
+                dest = discord.utils.find(lambda m: m.name.endswith('-'+name) and m.category.name==self.Werte['Kategorie_Konsole'], msg.guild.text_channels)
+                if dest is not None:
+                  await self.schreibeNachricht(msg, name+' per Lokalisierung finden oder über Konsole ansprechen.')
+
+            if 'information' in msg.content.lower():
+              await self.schreibeNachricht(msg,'*Not enough information to fulfile request. Ask for system help if needed*') 
+  
             if not await self.Berechtigung(msg):
                 return
             if eingaben[0] in dir(Umgebung):
@@ -182,10 +203,10 @@ class Umgebung:
           return
         try:
           ch = self.getOrtChannel(msg).name
-          if ch != modul:
-            await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt.')
-            await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} aus {ch}') 
-            return
+          #if ch != modul:
+          #  await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt.')
+          #  await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} aus {ch}') 
+          #  return
           if self.Werte['Modul_'+modul] == 1:
             # ausschalten
             dest = discord.utils.find(lambda m: m.name==modul and m.category.name==self.Werte['Kategorie_Orte'], msg.guild.voice_channels)
@@ -201,7 +222,7 @@ class Umgebung:
             await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} {text}ausgeschaltet.')
             # Luft ablassen  
             if len(dest.members) > 0:
-              await self.Ton(msg, modul, 'Druckluftzischen.mp3')
+              await self.Ton(msg, modul, self.Werte['Hinweis_Druckabfall'])
           else:
             # einschalten
             await self.schreibeNachricht(msg, f'Modul {modul} eingeschaltet.')
@@ -455,17 +476,14 @@ class Umgebung:
                  await self.schreibeSystemnachricht(msg, '***Die Resourcen sind zuende gegangen!***')
 
     async def Teilnehmen(self, msg):
-        if msg.channel.name != 'start-portal':
+        if msg.channel.name != self.Werte['Kanal_Start']:
             await self.schreibeNachricht(msg,'***System Error*** Erwachung ohne Schlaf')
             return
         name = self.parameter(msg, 1).strip().lower()
  
-        # prüfen ob Aufwachraum aktiviert ist!
-        # TODO
-
         # prüfen ob User bereits im Spiel ist 
         for channel in msg.guild.text_channels:
-          if channel.name != self.Werte['Konsole_Start'] and channel.category.name == self.Werte['Kategorie_Konsole'] and channel.name.startswith(self.Werte['Kanal_Konsole']):
+          if channel.name != self.Werte['Kanal_Start'] and channel.category.name == self.Werte['Kategorie_Konsole'] and channel.name.startswith(self.Werte['Kanal_Konsole']):
             perm = channel.overwrites_for(msg.author)
             if perm.send_messages or perm.read_messages:
               await self.schreibeNachricht(msg, f'{channel.name} bereits vorhanden, bitte dort weiterspielen.')
@@ -500,10 +518,25 @@ class Umgebung:
             await msg.delete()
             await self.schreibeSystemnachricht(msg, f'{msg.author.name} betritt als {msg.author.nick} das System')
             # Spieler für Aufwachraum berechtigen 
-            # TODO
-            # Spieler in den Aufwachraum bewegen
-            # TODO
- 
+            dest = discord.utils.find(lambda m: m.name=='Aufwachraum' and m.category.name==self.Werte['Kategorie_Orte'], server.voice_channels)
+            if dest is not None:
+              perms = dest.overwrites_for(msg.author)
+              perms.connect=True
+              perms.speak=True
+              perms.view_channel=True
+              await dest.set_permissions(msg.author, overwrite=perms, reason="Teilnehmen-Command")
+              # Spieler in den Aufwachraum bewegen
+              try:
+                ch = msg.author.voice.channel
+                if ch is not None:
+                  await msg.author.move_to(dest, reason='betritt das Spiel')
+              except:
+                await self.schreibeNachricht(msg, 'Keine Sprachverbindung gefunden. Bitte manuell verbinden.')             
+            # prüfen ob Aufwachraum aktiviert ist!
+            if self.Werte['Modul_Aufwachraum'] == 0:
+              self.Werte['Modul_Aufwachraum'] = 1
+              await self.Systemnachricht(msg,'Aufwachraum wurde aktiviert.')
+              
     async def Bewegen(self, msg):
         try:
           ch = msg.author.voice.channel
@@ -513,12 +546,12 @@ class Umgebung:
              await self.schreibeNachricht(msg, 'Bewegen ohne Sprachverbindung ist nicht möglich. Bitte erst verbinden.')
              return
         if ch.category.name != self.Werte['Kategorie_Orte']:
-            await self.schreibeNachricht(msg,' Bewegen nur mit Sprachverbindung in einem Ort möglich.')
+            await self.schreibeNachricht(msg,' Bewegen nur mit Sprachverbindung in einem Modul möglich.')
             return
         server = msg.guild
         channel = self.parameter(msg, 1).strip()
         if channel == ch.name:
-            await self.schreibeNachricht(msg,' Ort ist bereits erreicht.')
+            await self.schreibeNachricht(msg,' Modul ist bereits erreicht.')
             return
     
         # Bewegung nur in bekannte und aktivierte Module
@@ -562,25 +595,29 @@ class Umgebung:
                       return True
                 except:
                   await self.schreibeNachricht(msg, 'Fehler beim Sprachkanal')
-                await msg.author.move_to(dest, reason='betritt den Raum')
+                await msg.author.move_to(dest, reason='betritt das Modul')
                 if len(dest.members) > 3:
                   await self.schreibeNachricht(msg, 'Überfüllung! Luftqualität prüfen.')
                   await self.schreibeSystemnachricht(msg, f'*Critical* Überfüllung in {dest.name}: {len(dest.members)}')
             else:
                 await self.schreibeNachricht(msg, 'Modul unbekannt oder deaktiviert.')
         except KeyError:
-            await self.schreibeNachricht(msg,'Unbekannter Raum')
+            await self.schreibeNachricht(msg,'Unbekanntes Modul')
 
     async def Konsole(self, msg):
         name = self.parameter(msg, 1)
         text = self.parameter(msg, 2)
-        if name != 'Fehler' and text != 'Fehler':
+        if text == 'Fehler':
+          await self.schreibeNachricht(msg, '*Error*: Nichts zu übermitteln.')
+          return
+        if name != 'Fehler': 
             channel = discord.utils.get(msg.guild.text_channels, name=self.Werte['Kanal_Konsole']+name)
             if channel is None:
               await self.schreibeNachricht(msg, 'Unbekannte Konsole')
               return
             text = msg.content[(len(name)+1+7+1):]
-            await channel.send(f'*** Konsolennachricht: ***\n{text}')
+            await channel.send(f'***Konsolennachricht:***\n{text}')
+            await self.schreibeNachricht(msg, f'Nachricht an Konsole von {name} übermittelt.')
             await self.schreibeSystemnachricht(msg, f'Text an Konsole {name} durch {msg.author.nick}: {text}')
         else:
             await self.schreibeNachricht(msg, 'Unbekannte Konsole')
@@ -750,6 +787,7 @@ class Umgebung:
         'ModulSchalten <Modul> [!]\n' +
         'Konsole <Name> <Text> - Text auf Konsole ausgeben\n' +
         'KonsoleLog <Name> [Anzahl] \n' +
+        'Lokalisierung\n'+
         text
         )
 
@@ -801,7 +839,7 @@ class Umgebung:
         pass
       for channel in msg.guild.text_channels:
         if channel.category.name == self.Werte['Kategorie_Konsole']:
-          await channel.send(f'***Important Information***\n{text}')
+          await channel.send(f'***Important System Information***\n{text}')
 
     async def Systemnachrichten(self, msg):
       text = '***Systemnachrichtentexte***'
@@ -821,7 +859,7 @@ class Umgebung:
       await self.schreibeNachricht(msg, text)
 
     async def Berechtigung(self, msg, befehl=None, modul=None, rolle=None):
-        # prüft Berechtigung für bestimmte Modul in Abhängigkeit vom Ort und der Rolle 
+        # prüft Berechtigung für bestimmte Modul in Abhängigkeit vom Modul und der Rolle 
         # Berechtigung prüfen
         if self.parameter(msg, 0) == 'Berechtigung':
           befehl = self.parameter(msg, 1)
@@ -829,9 +867,14 @@ class Umgebung:
           rolle = self.parameter(msg, 3)
           befehlmodul = modul
         else:
-          modul = self.getOrtChannel(msg)
+          try:
+            modul = self.getOrtChannel(msg).name
+          except:
+            modul = 'Fehler'
           befehl = self.parameter(msg, 0)
           befehlmodul = self.parameter(msg, 1)
+          if befehlmodul == 'Fehler':
+            befehlmodul = modul
         rollen = list()
         if rolle is None:
           for w in list(self.Werte):
@@ -850,13 +893,12 @@ class Umgebung:
             liste = check.split(':')
             if liste[0] == '#':
               liste[0] = befehlmodul
-            if liste[0] == '*':
-              liste[0] = modul
-            print (liste)
-            if modul == liste[0]:
+            rint (f'{liste[0]} {liste[1]} {modul}')
+            if liste[0] == '*' or modul == liste[0]:
               if liste[1] == '*' or liste[1] in rollen:
                 if self.parameter(msg, 0) == 'Berechtigung':
-                  await self.schreibeNachricht(msg, 'Access approved.')            
+                  await self.schreibeNachricht(msg, 'Access approved.')    
+                print ('ok')        
                 return True
           # keine Berechtigung gefunden    
           await self.fehler(msg, 'Access denied.')
