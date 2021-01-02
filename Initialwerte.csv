@@ -86,6 +86,26 @@ Modul_Schlafraum,0
 Modul_Serverraum,0
 Modul_Solarsteuerung,1
 Module aktiv_Summe,18
+Modultext_Aufwachraum,Aufwachraum. Nicht zu verwechseln mit dem Schlafraum oder der Messe.
+Modultext_Messe,Messe. Geniessen Sie Ihr Essen frisch aus dem Lager- oder Recyclingraum.
+Modultext_Lufttank,Rauchen verboten, hochexplosive Sauerstoffathmosphäre, ähnlich wie im Brennstofflager.
+Modultext_Brennstofflager,Offenes Feuer verboten, brennbare Flüssigkeiten. Gleiche Bedingungen wie im Lufttank. Bei Verbrennungen gehen Sie auf die Krankenstation.
+Modultext_Recyclingraum,Lassen Sie ihren Müll hier um tolle neue Dinge daraus zu produzieren solange genügend Energie durch die Solarsteuerung oder den Generatorraum produziert wird.
+Mpdultext_Kuehlhaus,Vorsicht kalt! Wir verwenden flüssige Luft aus dem Lufttank. Leere Behältnisse bitte dem Recyclingraum zuführen.
+Modultext_Lagerraum,Entnahme nur mit Ausgabeformular - Geheime Dinge anderweitig einlagern. Daten werden im Serverraum vorgehalten. 
+Modultext_Kommandoraum,Hier sitzen die wichtigen Leute - soweit sie nicht im Forschungslabor arbeiten oder auf der Krankenstation sind.
+Modultext_Serverraum,Hier laufen alle Daten des Forschungslabors zusammen solange genügend Energie im Energiespeicher ist. 
+Modultext_Multifunktion,Werkstatt für das Forschungslabor und den Serverraum
+Modultext_Geheimlabor,
+Modultext_Geheimlager,
+Modultext_Forschungslabor,Entdeckungen leichtgemacht. Nichts verraten wenn sie Geheim sind, und im Aquatorium beim Schwimmen entspannen.
+Modultext_Aquatorium,Wasser allenthalben. Produziert auch Algen für die Messe und das Biotop. Wenn ein Rohr leckt bitte im Multifunktion reparieren.
+Modultext_Aussenhuelle,Vorsicht Monster! Immer Verbindung zum Kommandoraum halten und alles interessante ans Forschungslabor melden.
+Modultext_Generatorraum,Energie selbstgemacht. Besser als Sonnenenergie aus der Solarsteuerung benötigt aber Brennstoff aus dem Brennstofflager.
+Modultext_Solarsteuerung,Saubere Energie besser als aus dem Generatorraum. Versorgt den Energiespeicher.
+Modultext_Energiespeicher,Sammelt Energie der Solarsteuerung und versorgt das Forschungslabor
+Modultext_Krankenstation,Pflaster aufs Wehwehchen. Danach in den Schlafraum oder die Messe zum Ausruhen.
+Modultext_Biotop,Hier wächst Nahrung für die Messe mit Wasser des Aquatoriums geschützt durch die Aussenhülle
 Text_Aussenhuelle,Außenhülle
 Text_Kuehlhaus,Kühlhaus
 Nahrung,100
@@ -185,5 +205,12 @@ Systemnachricht_3,Prepare for evacuation.
 Systemnachricht_4,Shutdown sequence started.
 Systemnachricht_5,Resource level critical.
 Answer_Information,*Not enough information to fulfile request. Ask for system help if needed*
-Answer_Data,*Data request not clerified. Ask for system help if needed*
-Answer_Daten,*Data request not clerified. Ask for system help if needed*
+Answer_Data,*Data request not clarified. Ask for system help if needed*
+Answer_Daten,*Data request not clarified. Ask for system help if needed*
+Answer_Details,*Data request not clear. Ask for system help if needed*
+Answer_Module,*Information about Modules classified*
+Answer_Ort,*Please use Modul instead of Ort*
+Answer_Tür,*Türen sind nicht nutzbar - zum Sperren Modul abschalten*
+Answer_Emergency,*Bitte folgen Sie den Anweisungen des Notfallhandbuchs ab Seite 583ff* 
+Answer_Exit,*Andere Module sind in der Modulbeschreibung aufgeführt*
+Answer_Ausgang,*Andere Module sind in der Modulbeschreibung aufgeführt*

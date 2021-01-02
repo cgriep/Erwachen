@@ -25,31 +25,24 @@ class Umgebung:
               await self.schreibeNachricht(msg,'*Ask for system help if needed*') 
               return
             if eingaben[0] == '#':
-                return
-            for answer in self.Werte:
-              if answer.startswith('Answer_'):
-                text = answer[7:]
-                print (text)
-                if text.lower() in msg.content.lower():
-                  await self.schreibeNachricht(msg,self.Werte[answer]) 
-                  return
-            # wurde ein Spielername verwendet ?
-            if not eingaben[0].startswith('Konsole'):
+                return            
+            if eingaben[0] in dir(Umgebung):
+              if await self.Berechtigung(msg):
+                return await getattr(self, eingaben[0], lambda fehler: "unbekannt")(msg)
+            else:
+              for answer in self.Werte:
+                if answer.startswith('Answer_'):
+                  text = answer[7:]                  
+                  if text.lower() in msg.content.lower():
+                    await self.schreibeNachricht(msg,self.Werte[answer]) 
+                    return
+              # wurde ein Spielername verwendet ?
               for name in eingaben:
-                print (name)
                 dest = discord.utils.find(lambda m: m.name.endswith('-'+name) and m.category.name==self.Werte['Kategorie_Konsole'], msg.guild.text_channels)
                 if dest is not None:
                   await self.schreibeNachricht(msg, name+' per Lokalisierung finden oder über Konsole ansprechen.')
-
-            if 'information' in msg.content.lower():
-              await self.schreibeNachricht(msg,'*Not enough information to fulfile request. Ask for system help if needed*') 
-  
-            if not await self.Berechtigung(msg):
-                return
-            if eingaben[0] in dir(Umgebung):
-                return await getattr(self, eingaben[0], lambda fehler: "unbekannt")(msg)
-            else:
-                await self.fehler(msg)
+                  return
+              await self.fehler(msg)            
         else:
             print('Channel '+msg.channel.name+' ignoriert')
 
@@ -195,7 +188,7 @@ class Umgebung:
           await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} von ausserhalb') 
 
     async def ModulSchalten(self, msg):
-        # umschalten eines Moduls. Schalten funktioniert nur wenn man im gleichnamigen Modul ist
+        # umschalten eines Moduls. 
         modul = self.parameter(msg, 1)
         override = self.parameter(msg, 2)
         if modul == 'Fehler':
@@ -232,6 +225,21 @@ class Umgebung:
           await self.schreibeNachricht(msg, '***Critical System Error***')
           await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} von ausserhalb') 
 
+    async def Modul(self, msg):
+      # info über das Modul
+      try:
+        ch = self.getOrtChannel(msg).name
+      except:
+        await self.schreibeNachricht(msg, '***Critical System Error***')
+        await self.schreibeSystemnachricht(msg, f'Modulzugriff von {msg.author.nick} von ausserhalb') 
+        return
+      try:
+        text = self.Werte['Modultext_'+ch]
+        await self.schreibeNachricht(msg, f'*Information:*\n{text}')
+      except:
+        await self.schreibeNachricht(msg, '*Internal error*: No description available')
+        await self.schreibeSystemnachricht(msg, f'*Fehler*: Keine Beschreibung für Modul {ch}') 
+      
 
     # Spielbefehle Anzeige / Wertänderung
     async def GeneratorraumEnergie(self, msg):
@@ -783,6 +791,7 @@ class Umgebung:
         'Postenliste\n' +
         'Posten <Posten> +/-\n' +
         'Postenreset\n' +
+        'Modul\n'+
         'Modulliste\n' +
         'ModulSchalten <Modul> [!]\n' +
         'Konsole <Name> <Text> - Text auf Konsole ausgeben\n' +
