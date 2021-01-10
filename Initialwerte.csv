@@ -5,7 +5,6 @@ Brennstofferzeugung,25
 Brennstoffverbrauch_Aqua,10
 Brennstoffverbrauch_Biotop,10
 Brennstoffverbrauch_Generatorraum,5
-Brennstoffverbrauch_gesamt,25
 Energie,200
 Energiespeicher_max,500
 Energie_max,550
@@ -58,11 +57,9 @@ Lufttank_max,400
 Luft_max,480
 Luftproduktion_Aquatorium,16
 Luftproduktion_Biotop,24
-Lufterzeugung_gesamt,40
 Luftverbrauch_Geheimlabor,2
 Luftverbrauch_Module,18
 Luftverbrauch_Recyclingraum,20
-Luftverbrauch_gesamt,40
 Modul_Aquatorium,1
 Modul_Aufwachraum,1
 Modul_Aussenhuelle,0
@@ -88,17 +85,17 @@ Modul_Solarsteuerung,1
 Module aktiv_Summe,18
 Modultext_Aufwachraum,Aufwachraum. Nicht zu verwechseln mit dem Schlafraum oder der Messe.
 Modultext_Messe,Messe. Geniessen Sie Ihr Essen frisch aus dem Lager- oder Recyclingraum.
-Modultext_Lufttank,Rauchen verboten, hochexplosive Sauerstoffathmosphäre, ähnlich wie im Brennstofflager.
-Modultext_Brennstofflager,Offenes Feuer verboten, brennbare Flüssigkeiten. Gleiche Bedingungen wie im Lufttank. Bei Verbrennungen gehen Sie auf die Krankenstation.
-Modultext_Recyclingraum,Lassen Sie ihren Müll hier um tolle neue Dinge daraus zu produzieren solange genügend Energie durch die Solarsteuerung oder den Generatorraum produziert wird.
-Mpdultext_Kuehlhaus,Vorsicht kalt! Wir verwenden flüssige Luft aus dem Lufttank. Leere Behältnisse bitte dem Recyclingraum zuführen.
+Modultext_Lufttank,Rauchen verboten- hochexplosive Sauerstoffathmosphäre ähnlich wie im Brennstofflager. Anders als im Aquatorium kann Luft aber nicht auslaufen.
+Modultext_Brennstofflager,Offenes Feuer verboten-brennbare Flüssigkeiten. Gleiche Bedingungen wie im Lufttank. Bei Verbrennungen gehen Sie auf die Krankenstation.
+Modultext_Recyclingraum,Lassen Sie ihren Müll hier um tolle neue Dinge daraus zu produzieren solange genügend Energie durch die Solarsteuerung oder den Generatorraum produziert wird. Alternativ ins Multifunktion zum Reparieren.
+Mpdultext_Kuehlhaus,Vorsicht kalt! Wir verwenden flüssige Luft aus dem Lufttank für die Nahrungsmittel. Leere Behältnisse bitte dem Recyclingraum zuführen.
 Modultext_Lagerraum,Entnahme nur mit Ausgabeformular - Geheime Dinge anderweitig einlagern. Daten werden im Serverraum vorgehalten. 
 Modultext_Kommandoraum,Hier sitzen die wichtigen Leute - soweit sie nicht im Forschungslabor arbeiten oder auf der Krankenstation sind.
 Modultext_Serverraum,Hier laufen alle Daten des Forschungslabors zusammen solange genügend Energie im Energiespeicher ist. 
 Modultext_Multifunktion,Werkstatt für das Forschungslabor und den Serverraum
-Modultext_Geheimlabor,
-Modultext_Geheimlager,
-Modultext_Forschungslabor,Entdeckungen leichtgemacht. Nichts verraten wenn sie Geheim sind, und im Aquatorium beim Schwimmen entspannen.
+Modultext_Geheimlabor,Psst! Alles Geheim deshalb nichts lagern.
+Modultext_Geheimlager,Ups. Hier sollte doch niemand sein? Oder forschst du?
+Modultext_Forschungslabor,Entdeckungen leichtgemacht. Nichts verraten wenn sie Geheim sind und im Aquatorium beim Schwimmen entspannen.
 Modultext_Aquatorium,Wasser allenthalben. Produziert auch Algen für die Messe und das Biotop. Wenn ein Rohr leckt bitte im Multifunktion reparieren.
 Modultext_Aussenhuelle,Vorsicht Monster! Immer Verbindung zum Kommandoraum halten und alles interessante ans Forschungslabor melden.
 Modultext_Generatorraum,Energie selbstgemacht. Besser als Sonnenenergie aus der Solarsteuerung benötigt aber Brennstoff aus dem Brennstofflager.
@@ -106,6 +103,7 @@ Modultext_Solarsteuerung,Saubere Energie besser als aus dem Generatorraum. Verso
 Modultext_Energiespeicher,Sammelt Energie der Solarsteuerung und versorgt das Forschungslabor
 Modultext_Krankenstation,Pflaster aufs Wehwehchen. Danach in den Schlafraum oder die Messe zum Ausruhen.
 Modultext_Biotop,Hier wächst Nahrung für die Messe mit Wasser des Aquatoriums geschützt durch die Aussenhülle
+Modultext_Schlafraum,Ruhigen Schlaf solange genügend Energie im Energiespeicher ist.
 Text_Aussenhuelle,Außenhülle
 Text_Kuehlhaus,Kühlhaus
 Nahrung,100
@@ -144,6 +142,9 @@ Energieanteil_Biotop_Lufterzeugung,0.4
 Energieanteil_Aquatorium_Lufterzeugung_max,1
 Energieanteil_Biotop_Lufterzeugung_max,1
 Hinweis_Alarm,sound/alert.wav
+Hinweis_Mayday,sound/3mayday.mp3
+Hinweis_MaydayDown,sound/mayday.mp3
+Hinweis_SOS,sound/sos.mp3
 Hinweis_Sirene,sound/Alarmsirene.mp3
 Hinweis_Einschalten,sound/Energiean.wav
 Hinweis_Ausschalten,sound/Energieaus.wav
@@ -154,8 +155,8 @@ Hinweis_Unmoeglich,sound/unable2comply.wav
 Hinweis_Processing,sound/processingstandby.wav
 Hinweis_Systemton,sound/sound_20.wav
 Hinweis_Anklopfen,sound/sound_22.wav
-Hinweis_Offline,sound/finalwarnungenergyoffline.wav
-Hinweis_Gefahr,sound/danger.wav
+Hinweis_PowerOffline,sound/finalwarnungenergyoffline.wav
+Hinweis_GefahrEnergie,sound/danger.wav
 Hinweis_Diagnose,sound/diagnosticcylclecomplete.wav
 Rolle_Aquatorium,Nicht vergeben
 Rolle_Counselor,Nicht vergeben
@@ -184,21 +185,22 @@ Berechtigung_SchreibeWerte,*:System
 Berechtigung_LadeStartwerte,*:System
 Berechtigung_Berechtigungen,*:System
 Berechtigung_Posten,Messe:*
-Berechtigung_ModulSchalten,#:*;Generatorraum:Ingenieur
+Berechtigung_ModulSchalten,#:*;Generatorraum:Ingenieur;Energiespeicher:Facility
 Berechtigung_Energie,#:*
-Berechtigung_Konsole,Serverraum,*
+Berechtigung_Konsole,Serverraum:*;Kommandoraum:Informatik
 Berechtigung_Bewegen,*:*
 Berechtigung_Teilnehmen,*:*
-Berechtigung_Modulliste,Multifunktion:*
+Berechtigung_Modulliste,Multifunktion:*;Kommandoraum:Facility;Energiespeicher:Ingenieur
 Berechtigung_Anzeige,#:*;Status:Kommandant
-Berechtigung_KonsoleLog,Geheimlabor:*
-Berechtigung_Postenliste,*:Kommandant;Kommandoraum:*
+Berechtigung_KonsoleLog,Geheimlabor:*;Forschungslabor:Informatik
+Berechtigung_Postenliste,*:Counselor;Kommandoraum:*
 Berechtigung_AquatoriumVerhaeltnis,Aquatorium:Aquatorium
 Berechtigung_BiotopVerhaeltnis,Biotop:Biologie
 Berechtigung_Hilfe,*:*
-Berechtigung_AnzeigeStatus,Lufttank:*;Kuehlhaus:*;Energiespeicher:*;Brennstofflager:*
+Berechtigung_AnzeigeStatus,Lufttank:*;Kuehlhaus:*;Energiespeicher:*;Brennstofflager:*;*:Kommandant
 Berechtigung_Postenreset,Forschungslabor:*
 Berechtigung_Lokalisierung,*:Counselor
+Berechtigung_Modul,*:*
 Systemnachricht_1,Startsequenz für Klickübergang initiiert.
 Systemnachricht_2,Emergency Sequence started.
 Systemnachricht_3,Prepare for evacuation.
@@ -214,3 +216,7 @@ Answer_Tür,*Türen sind nicht nutzbar - zum Sperren Modul abschalten*
 Answer_Emergency,*Bitte folgen Sie den Anweisungen des Notfallhandbuchs ab Seite 583ff* 
 Answer_Exit,*Andere Module sind in der Modulbeschreibung aufgeführt*
 Answer_Ausgang,*Andere Module sind in der Modulbeschreibung aufgeführt*
+Answer_Licht,*Das Licht in den Modulen ist immer an solange genügend Energie vorhanden ist*
+Answer_Notausgang,*Begeben Sie sich zur Außenhülle um die Sphäre zu verlassen.*
+Answer_42,***Wie war die Frage?***
+Answer_Escape,*Wohin soll es denn gehen? Ist doch schön hier.*

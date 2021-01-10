@@ -17,6 +17,10 @@ class Umgebung:
 
     async def befehl(self, msg):
         # nur in Spielchannels reagieren
+        if msg.channel.type==discord.ChannelType.private:
+            await self.schreibeNachricht(msg, '***Criticial Security Breach!*** Direct access to system prohibited. Resume operations in operational channel.')
+            await self.schreibeSystemNachricht(msg, f'***Criticial Security Breach by {msg.author.nick}!*** unsuccessfull try of direct access to system.')            
+            return 
         if msg.channel.name == self.Werte['Kanal_Start'] or msg.channel.name.startswith(self.Werte['Kanal_Konsole']):
             eingaben = msg.content.split(' ')
             if msg.channel.name == 'start-portal' and eingaben[0] != 'Teilnehmen':
@@ -184,7 +188,7 @@ class Umgebung:
           #  await self.schreibeNachricht(msg, '*System Error* Zu weit entfernt.')
           #  await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} aus {ch}') 
         except:
-          await self.schreibeNachricht(msg, '***Critical System Error***')
+          await self.schreibeNachricht(msg, '***Critical System Error*** - external security breach')
           await self.schreibeSystemnachricht(msg, f'Zugriffsversuch von {msg.author.nick} auf {bezeichnung} von ausserhalb') 
 
     async def ModulSchalten(self, msg):
@@ -222,7 +226,7 @@ class Umgebung:
             await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} eingeschaltet.')
             self.Werte['Modul_'+modul] = 1
         except:
-          await self.schreibeNachricht(msg, '***Critical System Error***')
+          await self.schreibeNachricht(msg, '***Critical System Error*** - external security breach attempt')
           await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} von ausserhalb') 
 
     async def Modul(self, msg):
@@ -230,7 +234,7 @@ class Umgebung:
       try:
         ch = self.getOrtChannel(msg).name
       except:
-        await self.schreibeNachricht(msg, '***Critical System Error***')
+        await self.schreibeNachricht(msg, '***Critical System Error*** - Person nicht lokalisierbar')
         await self.schreibeSystemnachricht(msg, f'Modulzugriff von {msg.author.nick} von ausserhalb') 
         return
       try:
@@ -456,6 +460,14 @@ class Umgebung:
 
     async def ZugEnde(self, msg):
         await self.schreibeSystemnachricht(msg, '**Processing commands**\nBeende Klick ' + str(self.Werte['Klick']))
+
+ 
+        # 1. aktive Module / Luftverbrauch bestimmen
+        self.Werte['Luftverbrauch_Module'] = 0
+        for w in self.Werte:
+          if w.startswith('Modul_') and self.Werte[w] == 1:
+            self.Werte['Luftverbrauch_Module'] += self.Werte['Luftverbrauch_proModul']
+
         await self.GeneratorraumStart(msg)
         await self.BiotopStart(msg)
         await self.AquatoriumStart(msg)
@@ -476,12 +488,14 @@ class Umgebung:
         await self.LufttankStart(msg)
         await self.BrennstofflagerStart(msg)
         await self.SolarsteuerungStart(msg)
-
+       
         self.Werte['Klick'] += 1
         text = await self.AnzeigeStatus(msg)
         await self.schreibeSystemnachricht(msg, text)
         if (self.Werte['Energie'] < 0) or (self.Werte['Luft'] < 0) or (self.Werte['Nahrung'] < 0) or (self.Werte['Brennstoff'] < 0):
                  await self.schreibeSystemnachricht(msg, '***Die Resourcen sind zuende gegangen!***')
+        if (self.Werte['Energie'] > self.Werte['Energie_max']) or (self.Werte['Luft'] > self.Werte['Luft_max']) or (self.Werte['Nahrung'] > self.Werte['Nahrung_max']) or (self.Werte['Brennstoff'] > self.Werte['Brennstoff_max']):
+                 await self.schreibeSystemnachricht(msg, '***Die Lagerkapazitäten der Resourcen sind überschritten worden!***')
 
     async def Teilnehmen(self, msg):
         if msg.channel.name != self.Werte['Kanal_Start']:
