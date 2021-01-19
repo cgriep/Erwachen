@@ -239,6 +239,10 @@ class Umgebung:
         return
       try:
         text = self.Werte['Modultext_'+ch]
+        for ding in self.Werte:
+          if ding.startswith('Gegenstand_'):
+             if self.Werte[ding].endswith(':'+ch):
+              text += "\n" + ding[11:]
         await self.schreibeNachricht(msg, f'*Information:*\n{text}')
       except:
         await self.schreibeNachricht(msg, '*Internal error*: No description available')
@@ -791,6 +795,7 @@ class Umgebung:
         text += 'Systemnachricht <Text|Textname> - Sendet einen Text oder Standardtext an alle Konsolen\n' 
         text += 'Berechtigungen - Listet alle Berechtigungen auf\n'
         text += 'Berechtigung <befehl> <modul> <rolle> - Prüft die Berechtigung für eine Rolle in einem Modul\n'
+        text += 'Gegenstaende - Zeigt die vorhandenen Gegenstände mit Art und Ort\n'
         if self.parameter(msg,1) != 'Admin':
           text = ''
         await self.schreibeNachricht(msg, '***Systemüberblick***  \n' +
@@ -811,6 +816,7 @@ class Umgebung:
         'Konsole <Name> <Text> - Text auf Konsole ausgeben\n' +
         'KonsoleLog <Name> [Anzahl] \n' +
         'Lokalisierung\n'+
+        'Gegenstand [+/-] <Gegenstand>\n'+
         text
         )
 
@@ -852,6 +858,60 @@ class Umgebung:
              voice = await dest.connect()
              voice.play(discord.FFmpegPCMAudio(ton))
        
+    async def Gegenstaende(self, msg):
+        text = ''
+        for ding in self.Werte:
+          if ding.startswith('Gegenstand_'):
+            text += ding[11:] + " (" + self.Werte[ding] +")\n"
+        await self.schreibeNachricht(msg, f"*Gegenstände*\n" + text)
+
+    async def Gegenstand(self, msg):
+        art = self.parameter(msg, 1)
+        gegenstand = self.parameter(msg, 2)
+        modul = self.getOrtChannel(msg).name
+        if art == '+':
+          try:
+              art = self.Werte['Gegenstand_'+gegenstand].split(':') 
+              if art[1] == modul:
+                anz = 0
+                for ding in self.Werte:
+                  if ding.startswith('Gegenstand_'):
+                    if self.Werte[ding].endswith(':'+msg.author.nick):
+                      anz++
+                if anz < 4:
+                  self.Werte['Gegenstand_'+gegenstand] = art[0]+f':{msg.author.nick}'   
+                  await self.schreibeNachricht(msg, f"{gegenstand} aufgenommen.")
+                  await self.schreibeSystemnachricht(msg, f"{gegenstand} von {msg.author.nick} in {modul} aufgenommen")
+                  return
+                else:
+                  await self.fehler(msg,'Speicherkapazität für Gegenstände erschöpft. Entfernen Sie zunächst einen Gegenstand aus dem Speicher.')
+          except:
+            pass
+          await self.schreibeNachricht(msg, f'{gegenstand} nicht gefunden.')
+          await self.schreibeSystemnachricht(msg, f'{msg.author.nick} versuchte vergeblich in {modul} {gegenstand} aufzunehmen.')
+          return
+        if art == '-':
+          try:
+            art = self.Werte['Gegenstand_'+gegenstand].split(':')   
+            if art[1] == msg.author.nick:
+              self.Werte['Gegenstand_'+gegenstand] = art[0]+':'+modul
+              await self.schreibeNachricht(msg, f'{gegenstand} wurde abgelegt.')
+              await self.schreibeSystemnachricht(msg, f'{gegenstand} wurde von {msg.author.nick} in {modul} abgelegt.')
+              return
+          except:
+            pass
+          await self.schreibeNachricht(msg, f'{gegenstand} nicht im Besitz.')
+          await self.schreibeSystemnachricht(msg, f'{msg.author.nick} versuchte {gegenstand} abzulegen obwohl nicht im Besitz.')
+          return
+        text = ""
+        for ding in self.Werte:
+          if ding.startswith('Gegenstand_'):
+            if self.Werte[ding].endswith(':'+msg.author.nick):
+              text += "\n"+ding[11:]
+        if text == "":
+          text = '\nkeine'
+        await self.schreibeNachricht(msg, f'*Gegenstände*{text}')
+
     async def Systemnachricht(self, msg):
       # Nachricht an alle Textkonsolen
       text = self.parameter(msg, 1)
@@ -921,7 +981,6 @@ class Umgebung:
               if liste[1] == '*' or liste[1] in rollen:
                 if self.parameter(msg, 0) == 'Berechtigung':
                   await self.schreibeNachricht(msg, 'Access approved.')    
-                print ('ok')        
                 return True
           # keine Berechtigung gefunden    
           await self.fehler(msg, 'Access denied.')
