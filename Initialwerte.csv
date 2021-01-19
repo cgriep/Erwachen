@@ -184,6 +184,8 @@ Berechtigung_LadeWerte,*:System
 Berechtigung_SchreibeWerte,*:System
 Berechtigung_LadeStartwerte,*:System
 Berechtigung_Berechtigungen,*:System
+Berechtigung_Gegenstaende,*:System
+Berechtigung_Gegenstand,*:*
 Berechtigung_Posten,Messe:*
 Berechtigung_ModulSchalten,#:*;Generatorraum:Ingenieur;Energiespeicher:Facility
 Berechtigung_Energie,#:*
@@ -220,3 +222,57 @@ Answer_Licht,*Das Licht in den Modulen ist immer an solange genügend Energie vo
 Answer_Notausgang,*Begeben Sie sich zur Außenhülle um die Sphäre zu verlassen.*
 Answer_42,***Wie war die Frage?***
 Answer_Escape,*Wohin soll es denn gehen? Ist doch schön hier.*
+Answer_Nehmen,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Gegenstand**
+Answer_Nimm,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Gegenstand**
+Gegenstand_Dünger,Pflanzen:Biotop
+Gegenstand_Erde,Pflanzen:-
+Gegenstand_Samen,Pflanzen:-
+Gegenstand_Wasser,Pflanzen:-
+Gegenstand_USBStick,Daten:-
+Gegenstand_Diskette,Daten:-
+Gegenstand_Papier,Daten:-
+Gegenstand_Steintafel,Daten:-
+Gegenstand_Ausweiskarte,Sicherheit:-
+Gegenstand_Schlüssel,Sicherheit:-
+Gegenstand_Zahlencode,Sicherheit:-
+Gegenstand_Tresor,Sicherheit:-
+Gegenstand_Gürtel,Kleidung:-
+Gegenstand_Hemd,Kleidung:-
+Gegenstand_Hose,Kleidung:-
+Gegenstand_Socken,Kleidung:-
+Gegenstand_Seife,Waschen:-
+Gegenstand_Zahnbürste,Waschen:-
+Gegenstand_Waschlappen,Waschen:-
+Gegenstand_Handtuch,Waschen:-
+Gegenstand_Wasserglas,Behälter:-
+Gegenstand_Handtasche,Behälter:Kommandoraum
+Gegenstand_Koffer,Behälter:-
+Gegenstand_Blumentopf,Behälter:-
+Gegenstand_Schlafsack,Schlafen:-
+Gegenstand_Kissen,Schlafen:-
+Gegenstand_Decke,Schlafen:-
+Gegenstand_Matratze,Schlafen:-
+Gegenstand_Ananas,Obst:-
+Gegenstand_Mandarine,Obst:-
+Gegenstand_Banane,Obst:-
+Gegenstand_Granatapfel,Obst:-
+Gegenstand_Wasserpumpe,Werkzeug:-
+Gegenstand_Spaten,Werkzeug:-
+Gegenstand_Schwarzlichtlampe,Werkzeug:-
+Gegenstand_Scchraubenschlüssel,Werkzeug:-
+Gegenstand_Bilderrahmen,Deko:Schlafraum
+Gegenstand_Wackeldackel,Deko:-
+Gegenstand_Weihnachtskugel,Deko:-
+Gegenstand_Hampelmann,Deko:-
+Gegenstand_Tröte,Ton:-
+Gegenstand_Dudelsack,Ton:-
+Gegenstand_Lautsprecher,Ton:-
+Gegenstand_Mikrofon,Ton:-
+Gegenstand_Sauerstoffflasche,Flasche:-
+Gegenstand_Wasserstoffflasche,Flasche:-
+Gegenstand_Stickstoffflasche,Flasche:-
+Gegenstand_Tränengasflasche,Flasche:-
+Gegenstand_Sonnenbrille,Sehen:-
+Gegenstand_Klobrille,Sehen:-
+Gegenstand_Mikroskop,Sehen:-
+Gegenstand_Brennglas,Sehen:-
