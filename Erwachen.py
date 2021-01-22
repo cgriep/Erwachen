@@ -524,7 +524,7 @@ class Umgebung:
         else:
             category = discord.utils.find(lambda m: m.name==self.Werte['Kategorie_Konsole'], msg.guild.categories)
             overwrites = {
-                    msg.author: discord.PermissionOverwrite(send_messages=True, read_messages=True),
+                    msg.author: discord.PermissionOverwrite(send_messages=True, read_messages=True, read_message_history=True),
                     msg.guild.default_role: discord.PermissionOverwrite(send_messages=False, read_messages=False),
                     msg.guild.me: discord.PermissionOverwrite(send_messages=True, read_messages=True)
                     }
@@ -544,7 +544,7 @@ class Umgebung:
             await msg.delete()
             await self.schreibeSystemnachricht(msg, f'{msg.author.name} betritt als {msg.author.nick} das System')
             # Spieler für Aufwachraum berechtigen 
-            dest = discord.utils.find(lambda m: m.name=='Aufwachraum' and m.category.name==self.Werte['Kategorie_Orte'], server.voice_channels)
+            dest = discord.utils.find(lambda m: m.name=='Aufwachraum' and m.category.name==self.Werte['Kategorie_Orte'], msg.guild.voice_channels)
             if dest is not None:
               perms = dest.overwrites_for(msg.author)
               perms.connect=True
@@ -756,10 +756,12 @@ class Umgebung:
             syschannel = discord.utils.get(channel.guild.text_channels, name=self.Werte['Kanal_Konsole']+self.Werte['Kanal_System'])
             await syschannel.send(f'Eine ältere Nachricht in {channel.name} wurde gelöscht.')
 
-    def getOrtChannel(self, msg):
+    def getOrtChannel(self, msg, user=None):
+        if user is None:
+          user = msg.author
         try:
-            if msg.author.voice is not None:
-                ch = msg.author.voice.channel
+            if user.voice is not None:
+                ch = user.voice.channel
                 if ch.category.name==self.Werte['Kategorie_Orte']:
                     return ch
             return None
@@ -795,7 +797,7 @@ class Umgebung:
         text += 'Systemnachricht <Text|Textname> - Sendet einen Text oder Standardtext an alle Konsolen\n' 
         text += 'Berechtigungen - Listet alle Berechtigungen auf\n'
         text += 'Berechtigung <befehl> <modul> <rolle> - Prüft die Berechtigung für eine Rolle in einem Modul\n'
-        text += 'Gegenstaende - Zeigt die vorhandenen Gegenstände mit Art und Ort\n'
+        text += 'Gegenstandsliste - Zeigt die vorhandenen Gegenstände mit Art und Ort\n'
         if self.parameter(msg,1) != 'Admin':
           text = ''
         await self.schreibeNachricht(msg, '***Systemüberblick***  \n' +
@@ -808,7 +810,7 @@ class Umgebung:
         '<Modul>Anzeige \n'+
         '<Modul>Verhaeltnis <Wert>\n' +
         'Postenliste\n' +
-        'Posten <Posten> +/-\n' +
+        'Posten <Posten> [+|-]\n' +
         'Postenreset\n' +
         'Modul\n'+
         'Modulliste\n' +
@@ -816,7 +818,10 @@ class Umgebung:
         'Konsole <Name> <Text> - Text auf Konsole ausgeben\n' +
         'KonsoleLog <Name> [Anzahl] \n' +
         'Lokalisierung\n'+
-        'Gegenstand [+/-] <Gegenstand>\n'+
+        'Digitalisierung [+|-] <Gegenstand>\n'+
+        'Entdigitalisierung\n'+
+        'Datenmanipulation <Gegenstand> <Gegenstand>\n'+
+        'Gegenstaende\n'+
         text
         )
 
@@ -857,15 +862,46 @@ class Umgebung:
            if len(dest.members) > 0: 
              voice = await dest.connect()
              voice.play(discord.FFmpegPCMAudio(ton))
-       
+
     async def Gegenstaende(self, msg):
+        text = ''
+        module = {}
+        for ding in self.Werte:
+          if ding.startswith('Gegenstand_'):
+            i = self.Werte[ding].split(":")[0]
+            try:
+              module[i] += 1
+            except:
+              module[i] = 1
+        for modul in module:
+          text += f'{modul}: {module[modul]}\n'
+        await self.schreibeNachricht(msg, f"*Gegenstände*\n" + text)
+       
+    async def Datenmanipulation(self, msg):
+        g1 = self.parameter(msg, 1)
+        g2 = self.parameter(msg, 2)
+        try:
+          # beide Gegenstände im Besitz?
+          if self.Werte['Gegenstand_'+g1].endswith(":"+msg.author.nick) and self.Werte['Gegenstand_'+g2].endswith(":"+msg.author.nick):
+              art1 = self.Werte['Gegenstand_'+g1].split(":")
+              art2 = self.Werte['Gegenstand_'+g2].split(":")
+              self.Werte['Gegenstand_'+g1] = art2[0]+":"+msg.author.nick
+              self.Werte['Gegenstand_'+g2] = art1[0]+":"+msg.author.nick
+              await self.schreibeNachricht(msg, f"Daten von {g1} und {g2} erfolgreich manipuliert.")
+              await self.schreibeSystemnachricht(msg, f'Daten von {g1} und {g2} durch {msg.author.nick} manipuliert.')
+          else:
+            await self.fehler(msg, f'Ungültiger Manipulationsversuch an {g1} und {g2} - nicht vorhanden')
+        except:
+          await self.fehler(msg,f'Unbekannte Gegenstände {g1} und {g2}')
+
+    async def Gegenstandsliste(self, msg):
         text = ''
         for ding in self.Werte:
           if ding.startswith('Gegenstand_'):
             text += ding[11:] + " (" + self.Werte[ding] +")\n"
         await self.schreibeNachricht(msg, f"*Gegenstände*\n" + text)
 
-    async def Gegenstand(self, msg):
+    async def Digitalisierung(self, msg):
         art = self.parameter(msg, 1)
         gegenstand = self.parameter(msg, 2)
         modul = self.getOrtChannel(msg).name
@@ -877,18 +913,19 @@ class Umgebung:
                 for ding in self.Werte:
                   if ding.startswith('Gegenstand_'):
                     if self.Werte[ding].endswith(':'+msg.author.nick):
-                      anz++
+                      anz += 1
                 if anz < 4:
                   self.Werte['Gegenstand_'+gegenstand] = art[0]+f':{msg.author.nick}'   
-                  await self.schreibeNachricht(msg, f"{gegenstand} aufgenommen.")
-                  await self.schreibeSystemnachricht(msg, f"{gegenstand} von {msg.author.nick} in {modul} aufgenommen")
+                  await self.schreibeNachricht(msg, f"{gegenstand} digitalisiert.")
+                  await self.schreibeSystemnachricht(msg, f"{gegenstand} von {msg.author.nick} in {modul} digitalisiert")
                   return
                 else:
                   await self.fehler(msg,'Speicherkapazität für Gegenstände erschöpft. Entfernen Sie zunächst einen Gegenstand aus dem Speicher.')
+                  return
           except:
             pass
           await self.schreibeNachricht(msg, f'{gegenstand} nicht gefunden.')
-          await self.schreibeSystemnachricht(msg, f'{msg.author.nick} versuchte vergeblich in {modul} {gegenstand} aufzunehmen.')
+          await self.schreibeSystemnachricht(msg, f'{msg.author.nick} versuchte vergeblich in {modul} {gegenstand} zu digitalisieren.')
           return
         if art == '-':
           try:
@@ -907,10 +944,31 @@ class Umgebung:
         for ding in self.Werte:
           if ding.startswith('Gegenstand_'):
             if self.Werte[ding].endswith(':'+msg.author.nick):
-              text += "\n"+ding[11:]
+              text += "\n"+ding[11:] + " - " + self.Werte[ding].split(":")[0]
         if text == "":
           text = '\nkeine'
         await self.schreibeNachricht(msg, f'*Gegenstände*{text}')
+
+    async def Entdigitalisierung(self,msg):
+        anz = 0
+        module = []
+        for modul in self.Werte:
+          if modul.startswith('Modul_'):
+            module.append(modul[6:])
+        for ding in self.Werte:
+          if ding.startswith('Gegenstand_'):
+            art = self.Werte[ding].split(":")
+            if art[1] not in module:
+              # user-Objekt ermitteln
+              user = discord.utils.find(lambda m: m.nick == art[1], msg.guild.members)
+              if user is not None:
+                # finde aktuelle Position des Spielers
+                ch = self.getOrtChannel(None, user)
+                self.Werte[ding] = art[0] + ":" + ch.name
+                anz += 1
+        await self.schreibeNachricht(msg, f'{anz} Gegenstände ent-digitalisiert.')
+        modul = self.getOrtChannel(msg).name 
+        await self.schreibeSystemnachricht(msg,f'{anz} Gegenstände von {msg.author.nick} in {modul} entdigitalisiert.')
 
     async def Systemnachricht(self, msg):
       # Nachricht an alle Textkonsolen
@@ -976,7 +1034,7 @@ class Umgebung:
             liste = check.split(':')
             if liste[0] == '#':
               liste[0] = befehlmodul
-            rint (f'{liste[0]} {liste[1]} {modul}')
+            print (f'{liste[0]} {liste[1]} {modul}')
             if liste[0] == '*' or modul == liste[0]:
               if liste[1] == '*' or liste[1] in rollen:
                 if self.parameter(msg, 0) == 'Berechtigung':
