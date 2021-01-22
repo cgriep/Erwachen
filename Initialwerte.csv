@@ -184,8 +184,9 @@ Berechtigung_LadeWerte,*:System
 Berechtigung_SchreibeWerte,*:System
 Berechtigung_LadeStartwerte,*:System
 Berechtigung_Berechtigungen,*:System
-Berechtigung_Gegenstaende,*:System
-Berechtigung_Gegenstand,*:*
+Berechtigung_Gegenstandsliste,*:System
+Berechtigung_Digitalisierung,*:*
+Berechtigung_Entdigitalisierung,*:Kollaborateur;Serverraum:*
 Berechtigung_Posten,Messe:*
 Berechtigung_ModulSchalten,#:*;Generatorraum:Ingenieur;Energiespeicher:Facility
 Berechtigung_Energie,#:*
@@ -202,12 +203,15 @@ Berechtigung_Hilfe,*:*
 Berechtigung_AnzeigeStatus,Lufttank:*;Kuehlhaus:*;Energiespeicher:*;Brennstofflager:*;*:Kommandant
 Berechtigung_Postenreset,Forschungslabor:*
 Berechtigung_Lokalisierung,*:Counselor
+Berechtigung_Datenmanipulation,*:Geheimlabor
+Berechtigung_Gegenstaende,Geheimlager:*
 Berechtigung_Modul,*:*
 Systemnachricht_1,Startsequenz für Klickübergang initiiert.
 Systemnachricht_2,Emergency Sequence started.
 Systemnachricht_3,Prepare for evacuation.
 Systemnachricht_4,Shutdown sequence started.
-Systemnachricht_5,Resource level critical.
+Systemnachricht_5,Resource level critical. 
+Systemnachricht_6,Klickübergang abgeschlossen. Check Resource level.
 Answer_Information,*Not enough information to fulfile request. Ask for system help if needed*
 Answer_Data,*Data request not clarified. Ask for system help if needed*
 Answer_Daten,*Data request not clarified. Ask for system help if needed*
@@ -222,57 +226,67 @@ Answer_Licht,*Das Licht in den Modulen ist immer an solange genügend Energie vo
 Answer_Notausgang,*Begeben Sie sich zur Außenhülle um die Sphäre zu verlassen.*
 Answer_42,***Wie war die Frage?***
 Answer_Escape,*Wohin soll es denn gehen? Ist doch schön hier.*
-Answer_Nehmen,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Gegenstand**
-Answer_Nimm,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Gegenstand**
+Answer_Nehme,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Digitalisierung**
+Answer_Nimm,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Digitalisierung**
 Gegenstand_Dünger,Pflanzen:Biotop
-Gegenstand_Erde,Pflanzen:-
-Gegenstand_Samen,Pflanzen:-
-Gegenstand_Wasser,Pflanzen:-
-Gegenstand_USBStick,Daten:-
-Gegenstand_Diskette,Daten:-
-Gegenstand_Papier,Daten:-
-Gegenstand_Steintafel,Daten:-
-Gegenstand_Ausweiskarte,Sicherheit:-
-Gegenstand_Schlüssel,Sicherheit:-
-Gegenstand_Zahlencode,Sicherheit:-
-Gegenstand_Tresor,Sicherheit:-
-Gegenstand_Gürtel,Kleidung:-
-Gegenstand_Hemd,Kleidung:-
-Gegenstand_Hose,Kleidung:-
-Gegenstand_Socken,Kleidung:-
-Gegenstand_Seife,Waschen:-
-Gegenstand_Zahnbürste,Waschen:-
-Gegenstand_Waschlappen,Waschen:-
-Gegenstand_Handtuch,Waschen:-
-Gegenstand_Wasserglas,Behälter:-
+Gegenstand_Erde,Pflanzen:Brennstofflager
+Gegenstand_Samen,Pflanzen:Recyclingraum
+Gegenstand_Wasser,Pflanzen:Forschungslabor
+Gegenstand_USBStick,Daten:Aussenhuelle
+Gegenstand_Diskette,Daten:Serverraum
+Gegenstand_Papier,Daten:Energiespeicher
+Gegenstand_Steintafel,Daten:Energiespeicher
+Gegenstand_Ausweiskarte,Sicherheit:Lagerraum
+Gegenstand_Schlüssel,Sicherheit:Schlafraum
+Gegenstand_Zahlencode,Sicherheit:Aussenhuelle
+Gegenstand_Tresor,Sicherheit:Aufwachraum
+Gegenstand_Gürtel,Kleidung:Schlafraum
+Gegenstand_Hemd,Kleidung:Aquatorium
+Gegenstand_Hose,Kleidung:Recyclingraum
+Gegenstand_Socken,Kleidung:Solarsteuerung
+Gegenstand_Seife,Waschen:Energiespeicher
+Gegenstand_Zahnbürste,Waschen:Brennstofflager
+Gegenstand_Waschlappen,Waschen:Lagerraum
+Gegenstand_Handtuch,Waschen:Aussenhuelle
+Gegenstand_Wasserglas,Behälter:Energiespeicher
 Gegenstand_Handtasche,Behälter:Kommandoraum
-Gegenstand_Koffer,Behälter:-
-Gegenstand_Blumentopf,Behälter:-
-Gegenstand_Schlafsack,Schlafen:-
-Gegenstand_Kissen,Schlafen:-
-Gegenstand_Decke,Schlafen:-
-Gegenstand_Matratze,Schlafen:-
-Gegenstand_Ananas,Obst:-
-Gegenstand_Mandarine,Obst:-
-Gegenstand_Banane,Obst:-
-Gegenstand_Granatapfel,Obst:-
-Gegenstand_Wasserpumpe,Werkzeug:-
-Gegenstand_Spaten,Werkzeug:-
-Gegenstand_Schwarzlichtlampe,Werkzeug:-
-Gegenstand_Scchraubenschlüssel,Werkzeug:-
+Gegenstand_Koffer,Behälter:Aquatorium
+Gegenstand_Blumentopf,Behälter:Lagerraum
+Gegenstand_Schlafsack,Schlafen:Kuehlhaus
+Gegenstand_Kissen,Schlafen:Biotop
+Gegenstand_Decke,Schlafen:Solarsteuerung
+Gegenstand_Matratze,Schlafen:Generatorraum
+Gegenstand_Ananas,Obst:Messe
+Gegenstand_Mandarine,Obst:Kommandoraum
+Gegenstand_Banane,Obst:Multifunktion
+Gegenstand_Granatapfel,Obst:Geheimlabor
+Gegenstand_Wasserpumpe,Werkzeug:Aussenhuelle
+Gegenstand_Spaten,Werkzeug:Lufttank
+Gegenstand_Schwarzlichtlampe,Werkzeug:Geheimlabor
+Gegenstand_Scchraubenschlüssel,Werkzeug:Geheimlager
 Gegenstand_Bilderrahmen,Deko:Schlafraum
-Gegenstand_Wackeldackel,Deko:-
-Gegenstand_Weihnachtskugel,Deko:-
-Gegenstand_Hampelmann,Deko:-
-Gegenstand_Tröte,Ton:-
-Gegenstand_Dudelsack,Ton:-
-Gegenstand_Lautsprecher,Ton:-
-Gegenstand_Mikrofon,Ton:-
-Gegenstand_Sauerstoffflasche,Flasche:-
-Gegenstand_Wasserstoffflasche,Flasche:-
-Gegenstand_Stickstoffflasche,Flasche:-
-Gegenstand_Tränengasflasche,Flasche:-
-Gegenstand_Sonnenbrille,Sehen:-
-Gegenstand_Klobrille,Sehen:-
-Gegenstand_Mikroskop,Sehen:-
-Gegenstand_Brennglas,Sehen:-
+Gegenstand_Wackeldackel,Deko:Serverraum
+Gegenstand_Weihnachtskugel,Deko:Geheimlager
+Gegenstand_Hampelmann,Deko:Kommandoraum
+Gegenstand_Tröte,Ton:Schlafraum
+Gegenstand_Dudelsack,Ton:Multifunktion
+Gegenstand_Lautsprecher,Ton:Brennstofflager
+Gegenstand_Mikrofon,Ton:Biotop
+Gegenstand_Sauerstoffflasche,Flasche:Recyclingraum
+Gegenstand_Wasserstoffflasche,Flasche:Messe
+Gegenstand_Stickstoffflasche,Flasche:Krankenstation
+Gegenstand_Tränengasflasche,Flasche:Kuehlhaus
+Gegenstand_Sonnenbrille,Sehen:Kuehlhaus
+Gegenstand_Klobrille,Sehen:Messe
+Gegenstand_Mikroskop,Sehen:Lufttank
+Gegenstand_Brennglas,Sehen:Brennstofflager
+Auftrag_1,Sorge dafür dass Obst nicht essbar ist.
+Auftrag_2,Sorge dafür dass Kleidung der Sicherheit dient.
+Auftrag_3,Sorge dafür dass Flaschen Daten enthalten können.
+Auftrag_4,Sorge dafür dass Behälter nichts transportieren können.
+Auftrag_5,Sorge dafür dass Deko zur Körperpflege geeignet ist.
+Auftrag_6,Sorge dafür dass Datenspeicher zum Schlafen genutzt werden können.
+Auftrag_7,Bringe alle Deko in den Kommandoraum.
+Auftrag_8,Bringe alle Flaschen in das Biotop.
+Auftrag_9,Bringe alle Kleidung in das Aquatorium.
+Auftrag_10,Bringe alles Werkzeug in den Lagerraum.
