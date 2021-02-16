@@ -670,7 +670,7 @@ class Umgebung:
 
     async def Postenreset(self, msg):
         for w in self.Werte:
-          if w.startswith('Rolle_') and w != 'Rolle_System':
+          if w.startswith('Rolle_') and w != 'Rolle_System' and w != 'Rolle_Backup':
             if self.Werte[w] != 'Nicht vergeben':
               self.Werte[w] = 'Nicht verbeben, zuletzt '+self.Werte[w]
         await self.schreibeNachricht(msg, 'Posten wurden neu initialisiert.')

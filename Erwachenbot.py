@@ -101,7 +101,7 @@ async def on_ready():
           '**Charaktererstellung**\n'+
           'Wenn du mitspielen möchtest, informiere bitte den Spielleiter damit er dich freischaltet, wähle einen Fantasienamen und gebe dann *Teilnehmen <neuername>* ein. Das System ändert deinen angezeigten Namen auf diesem Server entsprechend.\n')
         await dest.send('**FAQs, Infos und sonstiges**\n' +
-          'Alles unter "Textkanäle" steht zur allgemeinen Kommunikation zur Verfügung. Es sind ein reiner OutTime-Kanäle, d.h. hier sollten keine Informationen ausgestauscht werden, die sich auf Inhalte aus den Spielsituationen ergeben. Aber man kann hier z.B. Termine vereinbaren, Verständnisfragen äußern, etc.\n' +
+          'Alles unter "Textkanäle" steht zur allgemeinen Kommunikation zur Verfügung. Es sind reine OutTime-Kanäle, d.h. hier sollten keine Informationen ausgestauscht werden, die sich auf Inhalte aus den Spielsituationen ergeben. Aber man kann hier z.B. Termine vereinbaren, Verständnisfragen äußern, etc.\n' +
           'Das Spiel läuft in den Kategorien "'+erwachen.Werte['Kategorie_Orte']+'" und "'+erwachen.Werte['Kategorie_Konsole']+'" ab.\n' +
           'Achte darauf, dich mit einem der Sprachkanäle zu verbinden, falls du in ein laufendes Spiel zurückkehrst.\n' +
           '**Begriffe**\n' +
