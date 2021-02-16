@@ -11,6 +11,8 @@ Energie_max,550
 Energieerzeugung_Generatorraum,75
 Energieerzeugung_Solar,25
 Energieerzeugung_gesamt,100
+Energieverbrauch_Aufwachraum_max,2
+Energieverbrauch_Aufwachraum,1
 Energieverbrauch_Aquatorium,10
 Energieverbrauch_Aquatorium_max,20
 Energieverbrauch_Aussenhuelle,10
@@ -169,22 +171,23 @@ Rolle_Facility,Nicht vergeben
 Rolle_Technik,Nicht vergeben
 Rolle_Kollaborateur,Nicht vergeben
 Rolle_System,Backup
+Rolle_Backup,System
 Kategorie_Konsole,Konsolen
 Kategorie_Orte,Module
 Kanal_Start,start-portal
 Kanal_System,system
 Kanal_Konsole,konsole-
-Berechtigung_ZugEnde,*:System
-Berechtigung_Wert,*:System
-Berechtigung_Shutdown,*:System
-Berechtigung_Alarm,*:System
-Berechtigung_Hinweisliste,*:System
-Berechtigung_Hinweis,*:System
-Berechtigung_LadeWerte,*:System
-Berechtigung_SchreibeWerte,*:System
-Berechtigung_LadeStartwerte,*:System
-Berechtigung_Berechtigungen,*:System
-Berechtigung_Gegenstandsliste,*:System
+Berechtigung_ZugEnde,*:System;*:Backup
+Berechtigung_Wert,*:System;*:Backup
+Berechtigung_Shutdown,*:System;*:Backup
+Berechtigung_Alarm,*:System;*:Backup
+Berechtigung_Hinweisliste,*:System;*:Backup
+Berechtigung_Hinweis,*:System;*:Backup
+Berechtigung_LadeWerte,*:System;*:Backup
+Berechtigung_SchreibeWerte,*:System;*:Backup
+Berechtigung_LadeStartwerte,*:System;*:Backup
+Berechtigung_Berechtigungen,*:System;*:Backup
+Berechtigung_Gegenstandsliste,*:System;*:Backup
 Berechtigung_Digitalisierung,*:*
 Berechtigung_Entdigitalisierung,*:Kollaborateur;Serverraum:*
 Berechtigung_Posten,Messe:*
@@ -224,10 +227,11 @@ Answer_Exit,*Andere Module sind in der Modulbeschreibung aufgeführt*
 Answer_Ausgang,*Andere Module sind in der Modulbeschreibung aufgeführt*
 Answer_Licht,*Das Licht in den Modulen ist immer an solange genügend Energie vorhanden ist*
 Answer_Notausgang,*Begeben Sie sich zur Außenhülle um die Sphäre zu verlassen.*
-Answer_42,***Wie war die Frage?***
+Answer_42,***Wie war die Frage, und hast du ein Handtuch dabei?***
 Answer_Escape,*Wohin soll es denn gehen? Ist doch schön hier.*
 Answer_Nehme,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Digitalisierung**
 Answer_Nimm,Gegenstände können nur digitalisiert werden. Verwenden Sie das Kommando **Digitalisierung**
+Answer_Help,Probiere eine andere Sprache.
 Gegenstand_Dünger,Pflanzen:Biotop
 Gegenstand_Erde,Pflanzen:Brennstofflager
 Gegenstand_Samen,Pflanzen:Recyclingraum
