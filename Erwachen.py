@@ -24,10 +24,7 @@ class Umgebung:
         if msg.channel.name == self.Werte['Kanal_Start'] or msg.channel.name.startswith(self.Werte['Kanal_Konsole']):
             eingaben = msg.content.split(' ')
             if msg.channel.name == 'start-portal' and eingaben[0] != 'Teilnehmen':
-                return
-            if '?' in msg.content:
-              await self.schreibeNachricht(msg,'*Ask for system help if needed*') 
-              return
+                return            
             if eingaben[0] == '#':
                 return            
             if eingaben[0] in dir(Umgebung):
@@ -46,6 +43,9 @@ class Umgebung:
                 if dest is not None:
                   await self.schreibeNachricht(msg, name+' per Lokalisierung finden oder über Konsole ansprechen.')
                   return
+              if '?' in msg.content:
+                await self.schreibeNachricht(msg,'*Ask for system help if needed*') 
+                return
               await self.fehler(msg)            
         else:
             print('Channel '+msg.channel.name+' ignoriert')
@@ -176,12 +176,14 @@ class Umgebung:
           await self.AnzeigeStatus(msg)
           return
         try:
-          #Übertragen in Berechtigung
-          #ch = self.getOrtChannel(msg).name
-          #if ch == bezeichnung or ch == text:                
           text = f'{text}energie ist eingestellt auf ' + str(self.Werte[f'Energieverbrauch_{bezeichnung}'] ) + ' von ' + str(self.Werte[f'Energieverbrauch_{bezeichnung}_max'])
           if add is not None:
               text += '\n' + add
+          else:
+            try:
+              text += '\nAnteil Luft-/Nahrungserzeugung: ' + str(float(self.Werte[f'Energieanteil_{bezeichnung}_Lufterzeugung']) * 100) + '%' 
+            except:
+              pass
           await self.schreibeNachricht(msg,text)
           await self.schreibeSystemnachricht(msg, f'{text} von {msg.author.nick} in {self.getOrtChannel(msg)} angezeigt')
           #else:
@@ -241,7 +243,7 @@ class Umgebung:
         text = self.Werte['Modultext_'+ch]
         for ding in self.Werte:
           if ding.startswith('Gegenstand_'):
-             if self.Werte[ding].endswith(':'+ch):
+             if self.Werte[ding].endswith(':'+ch):              
               text += "\n" + ding[11:]
         await self.schreibeNachricht(msg, f'*Information:*\n{text}')
       except:
@@ -463,8 +465,6 @@ class Umgebung:
         self.Werte['Brennstoff_max'] = (self.Werte['Brennstoff_tankvolumen_max']*self.Werte['Techstufe_Technik']) + (self.Werte['Brennstoff_tankvolumen_max']*0.2*self.Werte['Energieverbrauch_Brennstofflager'])
 
     async def ZugEnde(self, msg):
-        await self.schreibeSystemnachricht(msg, '**Processing commands**\nBeende Klick ' + str(self.Werte['Klick']))
-
  
         # 1. aktive Module / Luftverbrauch bestimmen
         self.Werte['Luftverbrauch_Module'] = 0
@@ -494,12 +494,15 @@ class Umgebung:
         await self.SolarsteuerungStart(msg)
        
         self.Werte['Klick'] += 1
-        text = await self.AnzeigeStatus(msg)
-        await self.schreibeSystemnachricht(msg, text)
+
+        text = '**Processing commands**\nBeende Klick ' + str(self.Werte['Klick']) 
+        text += '\n' + await self.AnzeigeStatus(msg)
+       
         if (self.Werte['Energie'] < 0) or (self.Werte['Luft'] < 0) or (self.Werte['Nahrung'] < 0) or (self.Werte['Brennstoff'] < 0):
-                 await self.schreibeSystemnachricht(msg, '***Die Resourcen sind zuende gegangen!***')
+                 text += '\n***Die Resourcen sind zuende gegangen!***'
         if (self.Werte['Energie'] > self.Werte['Energie_max']) or (self.Werte['Luft'] > self.Werte['Luft_max']) or (self.Werte['Nahrung'] > self.Werte['Nahrung_max']) or (self.Werte['Brennstoff'] > self.Werte['Brennstoff_max']):
-                 await self.schreibeSystemnachricht(msg, '***Die Lagerkapazitäten der Resourcen sind überschritten worden!***')
+                 text += '\n***Die Lagerkapazitäten der Resourcen sind überschritten worden!***'
+        await self.schreibeAnAlle(msg, text)
 
     async def Teilnehmen(self, msg):
         if msg.channel.name != self.Werte['Kanal_Start']:
@@ -579,7 +582,14 @@ class Umgebung:
         if channel == ch.name:
             await self.schreibeNachricht(msg,' Modul ist bereits erreicht.')
             return
-    
+        # Sonderfall: Ausgang
+        print (channel + ' // ' + self.getOrtChannel(msg).name)
+        
+        if self.getOrtChannel(msg).name == 'Aussenhuelle' and channel == 'Ausgang':
+          await self.schreibeAnAlle(msg, f'{msg.author.nick} verlässt die Sphäre.')
+          # Todo: Berechtigung für Textkanal + voice entfernen
+          return
+
         # Bewegung nur in bekannte und aktivierte Module
         try:
             if self.Werte['Modul_'+channel] == 1:
@@ -671,8 +681,8 @@ class Umgebung:
     async def Postenreset(self, msg):
         for w in self.Werte:
           if w.startswith('Rolle_') and w != 'Rolle_System' and w != 'Rolle_Backup':
-            if self.Werte[w] != 'Nicht vergeben':
-              self.Werte[w] = 'Nicht verbeben, zuletzt '+self.Werte[w]
+            if not self.Werte[w].startswith('Nicht vergeben'):
+              self.Werte[w] = 'Nicht vergeben, zuletzt '+self.Werte[w]
         await self.schreibeNachricht(msg, 'Posten wurden neu initialisiert.')
         await self.schreibeSystemnachricht(msg, f'Postenreset durch {msg.author.nick}')
 
@@ -801,13 +811,14 @@ class Umgebung:
         if self.parameter(msg,1) != 'Admin':
           text = ''
         await self.schreibeNachricht(msg, '***Systemüberblick***  \n' +
-        '# <Notiz> - Merker für eigenen Notizen, vom System ignoriert\n' + 
+        'Notiz <Notiz> - Merker für eigenen Notizen, vom System ignoriert\n' + 
+        'Notizen [<nr>] [!] [<Name>] - Auflisten der Notizen bzw. mit ! Löschen einer speziellen\n' +
         'Bewegen <Modul> \n'+
         'AnzeigeStatus \n'+
         'Anzeige <Modul>\n'+
         'Energie <Modul> <Wert>\n'+
-        '<Modul>Energie <Wert>\n'+
-        '<Modul>Anzeige \n'+
+        '<Modul>Energie <Wert> (deprecated)\n'+
+        '<Modul>Anzeige (deprecated)\n'+
         '<Modul>Verhaeltnis <Wert>\n' +
         'Postenliste\n' +
         'Posten <Posten> [+|-]\n' +
@@ -828,6 +839,59 @@ class Umgebung:
     async def Shutdown(self,msg):
        await self.SchreibeWerte(msg, 'Erwachen')
        await self.client.logout()
+
+    async def Notiz(self, msg):
+       nr = 0
+       while nr < 20:
+         try:
+           if self.Werte[f'Notiz_{msg.author.nick}_{nr}'] == "":
+             pass
+           nr += 1
+         except:
+           self.Werte[f'Notiz_{msg.author.nick}_{nr}'] = msg.content[6:]
+           await self.schreibeNachricht(msg, f'Notiz {nr} gesichert.')
+           return
+       await self.fehler(msg, f'Zu viele Notizen.')
+              
+    async def Notizen(self, msg):
+       nr = self.parameter(msg, 1)
+       p1 = self.parameter(msg, 2)
+       p2 = self.parameter(msg, 3)
+       name = msg.author.nick
+       if p1 != '!' and p1 != 'Fehler':
+         name = p1
+       else:
+         if p2 != 'Fehler':
+           name = p2
+       if name != msg.author.nick:
+         # Berechtigung prüfen
+         if self.Werte('Rolle_Kollaborateur') != msg.author.nick and self.getOrtChannel(msg).name != 'Schlafraum':
+           await self.fehler(msg, '***Potential Security Breach*** Access to foreign notes prohibited')
+           return
+       if p1 == '!' and nr.isnumeric():
+         try:
+             del self.Werte[f'Notiz_{name}_{nr}'] 
+             await self.schreibeNachricht(msg, f'Notiz {nr} gelöscht.')
+             return
+         except:
+           await self.fehler(msg)
+           return
+       text = ""
+       if nr.isnumeric():
+         try:
+           text = f'\n{nr} - '+self.Werte[f'Notiz_{name}_{nr}']
+         except:
+           await self.fehler(msg, 'Unbekannte Notiz')
+           return
+       else:
+         for w in list(self.Werte):
+           if w.startswith(f'Notiz_{name}_'):
+             l = len(f'Notiz_{name}_')
+             notiz = w[l:]
+             text += f'\n{notiz} - {self.Werte[w]}'
+       text = f'***Notizen von {name}***' + '\n'.join(sorted(text.split('\n')))
+       await self.schreibeNachricht(msg, text)
+
 
     async def Postenliste(self, msg):
        text = '***Posten***'
@@ -977,7 +1041,11 @@ class Umgebung:
         # prüfen ob es eine vorgefertigte Systemnachricht ist 
         text = self.Werte['Systemnachricht_'+text]
       except:
+        text = msg.content[16:]
         pass
+      await self.schreibeAnAlle(msg, text)
+
+    async def schreibeAnAlle(self, msg, text):
       for channel in msg.guild.text_channels:
         if channel.category.name == self.Werte['Kategorie_Konsole']:
           await channel.send(f'***Important System Information***\n{text}')
