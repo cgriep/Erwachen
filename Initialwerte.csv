@@ -78,7 +78,6 @@ Modul_Krankenstation,1
 Modul_Kuehlhaus,1
 Modul_Lagerraum,1
 Modul_Lufttank,1
-Modul_Forschunglabor,1
 Modul_Multifunktion,1
 Modul_Recyclingraum,1
 Modul_Schlafraum,0
@@ -87,10 +86,10 @@ Modul_Solarsteuerung,1
 Module aktiv_Summe,18
 Modultext_Aufwachraum,Aufwachraum. Nicht zu verwechseln mit dem Schlafraum oder der Messe.
 Modultext_Messe,Messe. Geniessen Sie Ihr Essen frisch aus dem Lager- oder Recyclingraum.
-Modultext_Lufttank,Rauchen verboten- hochexplosive Sauerstoffathmosphäre ähnlich wie im Brennstofflager. Anders als im Aquatorium kann Luft aber nicht auslaufen.
+Modultext_Lufttank,Rauchen verboten- hochexplosive Sauerstoffatmosphäre ähnlich wie im Brennstofflager. Anders als im Aquatorium kann Luft aber nicht auslaufen.
 Modultext_Brennstofflager,Offenes Feuer verboten-brennbare Flüssigkeiten. Gleiche Bedingungen wie im Lufttank. Bei Verbrennungen gehen Sie auf die Krankenstation.
 Modultext_Recyclingraum,Lassen Sie ihren Müll hier um tolle neue Dinge daraus zu produzieren solange genügend Energie durch die Solarsteuerung oder den Generatorraum produziert wird. Alternativ ins Multifunktion zum Reparieren.
-Mpdultext_Kuehlhaus,Vorsicht kalt! Wir verwenden flüssige Luft aus dem Lufttank für die Nahrungsmittel. Leere Behältnisse bitte dem Recyclingraum zuführen.
+Modultext_Kuehlhaus,Vorsicht kalt! Wir verwenden flüssige Luft aus dem Lufttank für die Nahrungsmittel. Leere Behältnisse bitte dem Recyclingraum zuführen.
 Modultext_Lagerraum,Entnahme nur mit Ausgabeformular - Geheime Dinge anderweitig einlagern. Daten werden im Serverraum vorgehalten. 
 Modultext_Kommandoraum,Hier sitzen die wichtigen Leute - soweit sie nicht im Forschungslabor arbeiten oder auf der Krankenstation sind.
 Modultext_Serverraum,Hier laufen alle Daten des Forschungslabors zusammen solange genügend Energie im Energiespeicher ist. 
@@ -99,12 +98,12 @@ Modultext_Geheimlabor,Psst! Alles Geheim deshalb nichts lagern.
 Modultext_Geheimlager,Ups. Hier sollte doch niemand sein? Oder forschst du?
 Modultext_Forschungslabor,Entdeckungen leichtgemacht. Nichts verraten wenn sie Geheim sind und im Aquatorium beim Schwimmen entspannen.
 Modultext_Aquatorium,Wasser allenthalben. Produziert auch Algen für die Messe und das Biotop. Wenn ein Rohr leckt bitte im Multifunktion reparieren.
-Modultext_Aussenhuelle,Vorsicht Monster! Immer Verbindung zum Kommandoraum halten und alles interessante ans Forschungslabor melden.
+Modultext_Aussenhuelle,Vorsicht Monster! Immer Verbindung zum Kommandoraum halten und alles interessante ans Forschungslabor melden. Nicht über die Kurbel für den Ausgang stolpern.
 Modultext_Generatorraum,Energie selbstgemacht. Besser als Sonnenenergie aus der Solarsteuerung benötigt aber Brennstoff aus dem Brennstofflager.
 Modultext_Solarsteuerung,Saubere Energie besser als aus dem Generatorraum. Versorgt den Energiespeicher.
 Modultext_Energiespeicher,Sammelt Energie der Solarsteuerung und versorgt das Forschungslabor
 Modultext_Krankenstation,Pflaster aufs Wehwehchen. Danach in den Schlafraum oder die Messe zum Ausruhen.
-Modultext_Biotop,Hier wächst Nahrung für die Messe mit Wasser des Aquatoriums geschützt durch die Aussenhülle
+Modultext_Biotop,Hier wächst Nahrung für die Messe mit Wasser des Aquatoriums geschützt durch die Aussenhuelle
 Modultext_Schlafraum,Ruhigen Schlaf solange genügend Energie im Energiespeicher ist.
 Text_Aussenhuelle,Außenhülle
 Text_Kuehlhaus,Kühlhaus
@@ -188,6 +187,8 @@ Berechtigung_SchreibeWerte,*:System;*:Backup
 Berechtigung_LadeStartwerte,*:System;*:Backup
 Berechtigung_Berechtigungen,*:System;*:Backup
 Berechtigung_Gegenstandsliste,*:System;*:Backup
+Berechtigung_Systemnachricht,*:System;*:Backup
+Berechtigung_Systemnachrichten,*:System;*:Backup
 Berechtigung_Digitalisierung,*:*
 Berechtigung_Entdigitalisierung,*:Kollaborateur;Serverraum:*
 Berechtigung_Posten,Messe:*
@@ -195,6 +196,8 @@ Berechtigung_ModulSchalten,#:*;Generatorraum:Ingenieur;Energiespeicher:Facility
 Berechtigung_Energie,#:*
 Berechtigung_Konsole,Serverraum:*;Kommandoraum:Informatik
 Berechtigung_Bewegen,*:*
+Berechtigung_Notiz,*:*
+Berechtigung_Notizen,*:*
 Berechtigung_Teilnehmen,*:*
 Berechtigung_Modulliste,Multifunktion:*;Kommandoraum:Facility;Energiespeicher:Ingenieur
 Berechtigung_Anzeige,#:*;Status:Kommandant
@@ -267,7 +270,7 @@ Gegenstand_Granatapfel,Obst:Geheimlabor
 Gegenstand_Wasserpumpe,Werkzeug:Aussenhuelle
 Gegenstand_Spaten,Werkzeug:Lufttank
 Gegenstand_Schwarzlichtlampe,Werkzeug:Geheimlabor
-Gegenstand_Scchraubenschlüssel,Werkzeug:Geheimlager
+Gegenstand_Schraubenschlüssel,Werkzeug:Geheimlager
 Gegenstand_Bilderrahmen,Deko:Schlafraum
 Gegenstand_Wackeldackel,Deko:Serverraum
 Gegenstand_Weihnachtskugel,Deko:Geheimlager
