@@ -220,13 +220,15 @@ class Umgebung:
             await self.schreibeNachricht(msg, f'Modul {modul} {text}abgeschaltet.')            
             await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} {text}ausgeschaltet.')
             # Luft ablassen  
-            if len(dest.members) > 0:
+            if dest is not None and len(dest.members) > 0:
               await self.Ton(msg, modul, self.Werte['Hinweis_Druckabfall'])
           else:
             # einschalten
             await self.schreibeNachricht(msg, f'Modul {modul} eingeschaltet.')
             await self.schreibeSystemnachricht(msg, f'Modul {modul} von {msg.author.nick} eingeschaltet.')
             self.Werte['Modul_'+modul] = 1
+            # Energie fürs Einschalten abziehen
+            self.Werte['Energie'] -= 1
         except:
           await self.schreibeNachricht(msg, '***Critical System Error*** - external security breach attempt')
           await self.schreibeSystemnachricht(msg, f'Schaltversuch von {msg.author.nick} auf {modul} von ausserhalb') 
@@ -633,8 +635,9 @@ class Umgebung:
                   await self.schreibeNachricht(msg, 'Fehler beim Sprachkanal')
                 await msg.author.move_to(dest, reason='betritt das Modul')
                 if len(dest.members) > 3:
-                  await self.schreibeNachricht(msg, 'Überfüllung! Luftqualität prüfen.')
+                  await self.schreibeNachricht(msg, 'Überfüllung! Luftqualität sinkt.')
                   await self.schreibeSystemnachricht(msg, f'*Critical* Überfüllung in {dest.name}: {len(dest.members)}')
+                  self.Werte['Luft'] -= 1
             else:
                 await self.schreibeNachricht(msg, 'Modul unbekannt oder deaktiviert.')
         except KeyError:
@@ -699,9 +702,17 @@ class Umgebung:
               await self.schreibeSystemnachricht(msg, f'{msg.author.nick} hat Posten {name} abgelegt.')
           if art == '+':
             if self.Werte['Rolle_'+name].startswith('Nicht vergeben'):
-              self.Werte['Rolle_'+name] = msg.author.nick
-              await self.schreibeNachricht(msg, f'Posten {name} angenommen.')
-              await self.schreibeSystemnachricht(msg, f'{msg.author.nick} hat Posten {name} angenommen.')
+              # Anzahl Rollen beschränken
+              rollen = 0
+              for item in self.Werte:
+                if item.startswith('Rolle_') and self.Werte[item] == msg.author.nick:
+                  rollen += 1
+              if rollen > 2:
+                 await self.fehler(msg, '***Critical Error*** Zu viele Rollen')
+              else:
+                self.Werte['Rolle_'+name] = msg.author.nick
+                await self.schreibeNachricht(msg, f'Posten {name} angenommen.')
+                await self.schreibeSystemnachricht(msg, f'{msg.author.nick} hat Posten {name} angenommen.')
             else:
               await self.schreibeNachricht(msg, f'Posten {name} bereits an '+self.Werte['Rolle_'+name]+' vergeben.')
           if art != '+' and art != '-':
